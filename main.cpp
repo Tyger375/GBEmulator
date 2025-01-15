@@ -254,6 +254,7 @@ struct CPU {
     static constexpr Byte INS_ADD_AL = 0x85;
     static constexpr Byte INS_ADD_AHL = 0x86;
     static constexpr Byte INS_ADD_AA = 0x87;
+    static constexpr Byte INS_ADD_AN = 0xC6;
 
     static constexpr Byte INS_ADC_AB = 0x88;
     static constexpr Byte INS_ADC_AC = 0x89;
@@ -263,6 +264,7 @@ struct CPU {
     static constexpr Byte INS_ADC_AL = 0x8D;
     static constexpr Byte INS_ADC_AHL = 0x8E;
     static constexpr Byte INS_ADC_AA = 0x8F;
+    static constexpr Byte INS_ADC_AN = 0xCE;
 
     static constexpr Byte INS_SUB_AB = 0x90;
     static constexpr Byte INS_SUB_AC = 0x91;
@@ -272,6 +274,7 @@ struct CPU {
     static constexpr Byte INS_SUB_AL = 0x95;
     static constexpr Byte INS_SUB_AHL = 0x96;
     static constexpr Byte INS_SUB_AA = 0x97;
+    static constexpr Byte INS_SUB_AN = 0xD6;
 
     static constexpr Byte INS_SBC_AB = 0x98;
     static constexpr Byte INS_SBC_AC = 0x99;
@@ -281,6 +284,7 @@ struct CPU {
     static constexpr Byte INS_SBC_AL = 0x9D;
     static constexpr Byte INS_SBC_AHL = 0x9E;
     static constexpr Byte INS_SBC_AA = 0x9F;
+    static constexpr Byte INS_SBC_AN = 0xDE;
 
     static constexpr Byte INS_AND_AB = 0xA0;
     static constexpr Byte INS_AND_AC = 0xA1;
@@ -290,6 +294,7 @@ struct CPU {
     static constexpr Byte INS_AND_AL = 0xA5;
     static constexpr Byte INS_AND_AHL = 0xA6;
     static constexpr Byte INS_AND_AA = 0xA7;
+    static constexpr Byte INS_AND_AN = 0xE6;
 
     static constexpr Byte INS_XOR_AB = 0xA8;
     static constexpr Byte INS_XOR_AC = 0xA9;
@@ -299,6 +304,7 @@ struct CPU {
     static constexpr Byte INS_XOR_AL = 0xAD;
     static constexpr Byte INS_XOR_AHL = 0xAE;
     static constexpr Byte INS_XOR_AA = 0xAF;
+    static constexpr Byte INS_XOR_AN = 0xEE;
 
     static constexpr Byte INS_OR_AB = 0xB0;
     static constexpr Byte INS_OR_AC = 0xB1;
@@ -308,6 +314,7 @@ struct CPU {
     static constexpr Byte INS_OR_AL = 0xB5;
     static constexpr Byte INS_OR_AHL = 0xB6;
     static constexpr Byte INS_OR_AA = 0xB7;
+    static constexpr Byte INS_OR_AN = 0xF6;
 
     static constexpr Byte INS_CP_AB = 0xB8;
     static constexpr Byte INS_CP_AC = 0xB9;
@@ -317,6 +324,30 @@ struct CPU {
     static constexpr Byte INS_CP_AL = 0xBD;
     static constexpr Byte INS_CP_AHL = 0xBE;
     static constexpr Byte INS_CP_AA = 0xBF;
+    static constexpr Byte INS_CP_AN = 0xFE;
+
+    static constexpr Byte INS_INC_B = 0x04;
+    static constexpr Byte INS_INC_C = 0x0C;
+    static constexpr Byte INS_INC_D = 0x14;
+    static constexpr Byte INS_INC_E = 0x1C;
+    static constexpr Byte INS_INC_H = 0x24;
+    static constexpr Byte INS_INC_L = 0x2C;
+    static constexpr Byte INS_INC_PHL = 0x34;
+    static constexpr Byte INS_INC_A = 0x3C;
+
+    static constexpr Byte INS_DEC_B = 0x05;
+    static constexpr Byte INS_DEC_C = 0x0D;
+    static constexpr Byte INS_DEC_D = 0x15;
+    static constexpr Byte INS_DEC_E = 0x1D;
+    static constexpr Byte INS_DEC_H = 0x25;
+    static constexpr Byte INS_DEC_L = 0x2D;
+    static constexpr Byte INS_DEC_PHL = 0x35;
+    static constexpr Byte INS_DEC_A = 0x3D;
+
+    static constexpr Byte INS_DAA = 0x27;
+    static constexpr Byte INS_SCF = 0x37;
+    static constexpr Byte INS_CPL = 0x2F;
+    static constexpr Byte INS_CCF = 0x3F;
 
     u32 execute(Memory& mem) {
         u32 cycles = 0;
@@ -1284,6 +1315,15 @@ struct CPU {
             z = A == 0;
             break;
         }
+        case INS_ADD_AN: {
+            Byte N = fetch_byte(cycles, mem);
+            n = 0;
+            h = ((A & 0xF) + (N & 0xF)) > 0xF;
+            c = (u32)((A & 0xFF) + (N & 0xFF)) > 0xFF;
+            A += N;
+            z = A == 0;
+            break;
+        }
 
         case INS_ADC_AB: {
             Byte add = B + c;
@@ -1358,6 +1398,15 @@ struct CPU {
             z = A == 0;
             break;
         }
+        case INS_ADC_AN: {
+            Byte add = fetch_byte(cycles, mem) + c;
+            n = 0;
+            h = ((A & 0xF) + (add & 0xF)) > 0xF;
+            c = (u32)((A & 0xFF) + (add & 0xFF)) > 0xFF;
+            A += add;
+            z = A == 0;
+            break;
+        }
 
         case INS_SUB_AB: {
             n = 1;
@@ -1422,6 +1471,15 @@ struct CPU {
             h = ((A & 0x0F) < (A & 0x0F));
             c = A < A;
             A -= A;
+            z = A == 0;
+            break;
+        }
+        case INS_SUB_AN: {
+            Byte N = fetch_byte(cycles, mem);
+            n = 1;
+            h = ((A & 0x0F) < (N & 0x0F));
+            c = A < N;
+            A -= N;
             z = A == 0;
             break;
         }
@@ -1499,6 +1557,15 @@ struct CPU {
             z = A == 0;
             break;
         }
+        case INS_SBC_AN: {
+            Byte sub = fetch_byte(cycles, mem) + c;
+            n = 1;
+            h = ((A & 0x0F) < (sub & 0x0F));
+            c = A < sub;
+            A -= sub;
+            z = A == 0;
+            break;
+        }
 
         case INS_AND_AB: {
             A = A & B;
@@ -1560,6 +1627,14 @@ struct CPU {
         }
         case INS_AND_AA: {
             A = A & A;
+            z = A == 0;
+            n = 0;
+            h = 1;
+            c = 0;
+            break;
+        }
+        case INS_AND_AN: {
+            A = A & fetch_byte(cycles, mem);
             z = A == 0;
             n = 0;
             h = 1;
@@ -1633,6 +1708,14 @@ struct CPU {
             c = 0;
             break;
         }
+        case INS_XOR_AN: {
+            A = A ^ fetch_byte(cycles, mem);
+            z = A == 0;
+            n = 0;
+            h = 0;
+            c = 0;
+            break;
+        }
 
         case INS_OR_AB: {
             A = A | B;
@@ -1694,6 +1777,14 @@ struct CPU {
         }
         case INS_OR_AA: {
             A = A | A;
+            z = A == 0;
+            n = 0;
+            h = 0;
+            c = 0;
+            break;
+        }
+        case INS_OR_AN: {
+            A = A | fetch_byte(cycles, mem);
             z = A == 0;
             n = 0;
             h = 0;
@@ -1765,6 +1856,175 @@ struct CPU {
             n = 1;
             h = ((A & 0x0F) < (A & 0x0F));
             c = A < A;
+            break;
+        }
+        case INS_CP_AN: {
+            Byte N = fetch_byte(cycles, mem);
+            Byte total = A - N;
+            z = total == 0;
+            n = 1;
+            h = ((A & 0x0F) < (N & 0x0F));
+            c = A < N;
+            break;
+        }
+
+        case INS_INC_B: {
+            n = 0;
+            h = ((B & 0xF) + 1) > 0xF;
+            B++;
+            z = B == 0;
+            break;
+        }
+        case INS_INC_C: {
+            n = 0;
+            h = ((C & 0xF) + 1) > 0xF;
+            C++;
+            z = C == 0;
+            break;
+        }
+        case INS_INC_D: {
+            n = 0;
+            h = ((D & 0xF) + 1) > 0xF;
+            D++;
+            z = D == 0;
+            break;
+        }
+        case INS_INC_E: {
+            n = 0;
+            h = ((E & 0xF) + 1) > 0xF;
+            E++;
+            z = E == 0;
+            break;
+        }
+        case INS_INC_H: {
+            n = 0;
+            h = ((H & 0xF) + 1) > 0xF;
+            H++;
+            z = H == 0;
+            break;
+        }
+        case INS_INC_L: {
+            n = 0;
+            h = ((L & 0xF) + 1) > 0xF;
+            L++;
+            z = L == 0;
+            break;
+        }
+        case INS_INC_PHL: {
+            Word addr = L | (H << 8);
+            Byte data = read_byte(addr, cycles, mem);
+            n = 0;
+            h = ((data & 0xF) + 1) > 0xF;
+            write_byte(addr, data+1, cycles, mem);
+            z = (data+1) == 0;
+            break;
+        }
+        case INS_INC_A: {
+            n = 0;
+            h = ((A & 0xF) + 1) > 0xF;
+            A++;
+            z = A == 0;
+            break;
+        }
+
+        case INS_DEC_B: {
+            n = 1;
+            h = (B & 0xF) < 1;
+            B--;
+            z = B == 0;
+            break;
+        }
+        case INS_DEC_C: {
+            n = 1;
+            h = (C & 0xF) < 1;
+            C--;
+            z = C == 0;
+            break;
+        }
+        case INS_DEC_D: {
+            n = 1;
+            h = (D & 0xF) < 1;
+            D--;
+            z = D == 0;
+            break;
+        }
+        case INS_DEC_E: {
+            n = 1;
+            h = (E & 0xF) < 1;
+            E--;
+            z = E == 0;
+            break;
+        }
+        case INS_DEC_H: {
+            n = 1;
+            h = (H & 0xF) < 1;
+            H--;
+            z = H == 0;
+            break;
+        }
+        case INS_DEC_L: {
+            n = 1;
+            h = (L & 0xF) < 1;
+            L--;
+            z = L == 0;
+            break;
+        }
+        case INS_DEC_PHL: {
+            Word addr = L | (H << 8);
+            Byte data = read_byte(addr, cycles, mem);
+            n = 1;
+            h = (data & 0xF) < 1;
+            write_byte(addr, data-1, cycles, mem);
+            z = (data-1) == 0;
+            break;
+        }
+        case INS_DEC_A: {
+            n = 1;
+            h = (A & 0xF) < 1;
+            A--;
+            z = A == 0;
+            break;
+        }
+
+        case INS_DAA: {
+            if (n & 1) {
+                Byte adj = 0;
+                if (h & 1)
+                    adj += 0x6;
+                if (c & 1)
+                    adj += 0x60;
+                c = adj > A;
+                A -= adj;
+                z = A == 0;
+            } else {
+                Byte adj = 0;
+                if (h & 1 || (A & 0xF) > 0x9)
+                    adj += 0x6;
+                if (c & 1 || A > 0x9F)
+                    adj += 0x60;
+                c = ((A & 0xFF) + (adj + 0xFF)) > 0xFF;
+                A += adj;
+                z = A == 0;
+            }
+            h = 0;
+            break;
+        }
+        case INS_SCF: {
+            n = 0;
+            h = 0;
+            c = 1;
+            break;
+        }
+        case INS_CPL: {
+            n = 1;
+            h = 1;
+            A = ~A;
+            break;
+        }
+        case INS_CCF: {
+            n = 0;
+            h = 0;
+            c = ~c;
             break;
         }
 
