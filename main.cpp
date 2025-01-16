@@ -1136,7 +1136,7 @@ struct CPU {
         case INS_PUSH_AF: {
             SP -= 2;
             cycles++;
-            Byte F = 0x0 | (z << 7) | (n << 6) | (h << 5) | (c << 4);
+            Byte F = 0x0 | ((z & 1) << 7) | ((n & 1) << 6) | ((h & 1) << 5) | ((c & 1) << 4);
             write_byte(SP, F, cycles, mem);
             write_byte(SP+1, A, cycles, mem);
             break;
@@ -1514,7 +1514,7 @@ struct CPU {
         }
         case INS_ADD_HLHL: {
             Word data = L | (H << 8);
-            Byte tot = data + data;
+            Word tot = data + data;
             L = tot & 0x00FF;
             H = ((tot & 0xFF00) >> 8);
             cycles++;
@@ -1525,7 +1525,7 @@ struct CPU {
         }
         case INS_ADD_HLSP: {
             Word data = L | (H << 8);
-            Byte tot = data + SP;
+            Word tot = data + SP;
             L = tot & 0x00FF;
             H = ((tot & 0xFF00) >> 8);
             cycles++;
