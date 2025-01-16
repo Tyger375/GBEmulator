@@ -1,3 +1,4 @@
+
 #include <iostream>
 #define DEBUG(byte) printf("%#02X\n", byte)
 
@@ -274,6 +275,7 @@ struct CPU {
     static constexpr Byte INS_SUB_AL = 0x95;
     static constexpr Byte INS_SUB_AHL = 0x96;
     static constexpr Byte INS_SUB_AA = 0x97;
+
     static constexpr Byte INS_SUB_AN = 0xD6;
 
     static constexpr Byte INS_SBC_AB = 0x98;
@@ -348,6 +350,50 @@ struct CPU {
     static constexpr Byte INS_SCF = 0x37;
     static constexpr Byte INS_CPL = 0x2F;
     static constexpr Byte INS_CCF = 0x3F;
+
+    // 8 BITS SHIFT / ROTATE / BIT INSTRUCTION
+    static constexpr Byte INS_RLCA = 0x07;
+    static constexpr Byte INS_RRCA = 0x0F;
+    static constexpr Byte INS_RLA = 0x17;
+    static constexpr Byte INS_RRA = 0x1F;
+
+    static constexpr Byte INS_PREFIX = 0xCB;
+
+    static constexpr Byte INS_RLC_B = 0x00;
+    static constexpr Byte INS_RLC_C = 0x01;
+    static constexpr Byte INS_RLC_D = 0x02;
+    static constexpr Byte INS_RLC_E = 0x03;
+    static constexpr Byte INS_RLC_H = 0x04;
+    static constexpr Byte INS_RLC_L = 0x05;
+    static constexpr Byte INS_RLC_HL = 0x06;
+    static constexpr Byte INS_RLC_A = 0x07;
+
+    static constexpr Byte INS_RRC_B = 0x08;
+    static constexpr Byte INS_RRC_C = 0x09;
+    static constexpr Byte INS_RRC_D = 0x0A;
+    static constexpr Byte INS_RRC_E = 0x0B;
+    static constexpr Byte INS_RRC_H = 0x0C;
+    static constexpr Byte INS_RRC_L = 0x0D;
+    static constexpr Byte INS_RRC_HL = 0x0E;
+    static constexpr Byte INS_RRC_A = 0x0F;
+
+    static constexpr Byte INS_RL_B = 0x10;
+    static constexpr Byte INS_RL_C = 0x11;
+    static constexpr Byte INS_RL_D = 0x12;
+    static constexpr Byte INS_RL_E = 0x13;
+    static constexpr Byte INS_RL_H = 0x14;
+    static constexpr Byte INS_RL_L = 0x15;
+    static constexpr Byte INS_RL_HL = 0x16;
+    static constexpr Byte INS_RL_A = 0x17;
+
+    static constexpr Byte INS_RR_B = 0x18;
+    static constexpr Byte INS_RR_C = 0x19;
+    static constexpr Byte INS_RR_D = 0x1A;
+    static constexpr Byte INS_RR_E = 0x1B;
+    static constexpr Byte INS_RR_H = 0x1C;
+    static constexpr Byte INS_RR_L = 0x1D;
+    static constexpr Byte INS_RR_HL = 0x1E;
+    static constexpr Byte INS_RR_A = 0x1F;
 
     u32 execute(Memory& mem) {
         u32 cycles = 0;
@@ -2028,9 +2074,256 @@ struct CPU {
             break;
         }
 
+        case INS_RLCA: {
+            Byte last = (A & 0x80) > 0;
+            A <<= 1;
+            A |= last;
+            c = last;
+            z = 0;
+            n = 0;
+            h = 0;
+            break;
+        }
+        case INS_RRCA: {
+            Byte first = A & 1;
+            A >>= 1;
+            A |= first << 7;
+            c = first;
+            z = 0;
+            n = 0;
+            h = 0;
+            break;
+        }
+        case INS_RLA: {
+            Byte last = (A & 0x80) > 0;
+            A <<= 1;
+            A |= c & 1;
+            c = last;
+            z = 0;
+            n = 0;
+            h = 0;
+            break;
+        }
+        case INS_RRA: {
+            Byte first = A & 1;
+            A >>= 1;
+            A |= (c & 1) << 7;
+            c = first;
+            z = 0;
+            n = 0;
+            h = 0;
+            break;
+        }
+        case INS_PREFIX: {
+            Byte prefix_ins = fetch_byte(cycles, mem);
+            switch (prefix_ins) {
+            case INS_RLC_B: {
+                B = rlc_r(B);
+                break;
+            }
+            case INS_RLC_C: {
+                C = rlc_r(C);
+                break;
+            }
+            case INS_RLC_D: {
+                D = rlc_r(D);
+                break;
+            }
+            case INS_RLC_E: {
+                E = rlc_r(E);
+                break;
+            }
+            case INS_RLC_H: {
+                H = rlc_r(H);
+                break;
+            }
+            case INS_RLC_L: {
+                L = rlc_r(L);
+                break;
+            }
+            case INS_RLC_HL: {
+                Word addr = L | (H << 8);
+                Byte data = read_byte(addr, cycles, mem);
+                data = rlc_r(data);
+                write_byte(addr, data, cycles, mem);
+                break;
+            }
+            case INS_RLC_A: {
+                A = rlc_r(A);
+                break;
+            }
+
+            case INS_RRC_B: {
+                B = rrc_r(B);
+                break;
+            }
+            case INS_RRC_C: {
+                C = rrc_r(C);
+                break;
+            }
+            case INS_RRC_D: {
+                D = rrc_r(D);
+                break;
+            }
+            case INS_RRC_E: {
+                E = rrc_r(E);
+                break;
+            }
+            case INS_RRC_H: {
+                H = rrc_r(H);
+                break;
+            }
+            case INS_RRC_L: {
+                L = rrc_r(L);
+                break;
+            }
+            case INS_RRC_HL: {
+                Word addr = L | (H << 8);
+                Byte data = read_byte(addr, cycles, mem);
+                data = rrc_r(data);
+                write_byte(addr, data, cycles, mem);
+                break;
+            }
+            case INS_RRC_A: {
+                A = rrc_r(A);
+                break;
+            }
+
+            case INS_RL_B: {
+                B = rl_r(B);
+                break;
+            }
+            case INS_RL_C: {
+                C = rl_r(C);
+                break;
+            }
+            case INS_RL_D: {
+                D = rl_r(D);
+                break;
+            }
+            case INS_RL_E: {
+                E = rl_r(E);
+                break;
+            }
+            case INS_RL_H: {
+                H = rl_r(H);
+                break;
+            }
+            case INS_RL_L: {
+                L = rl_r(L);
+                break;
+            }
+            case INS_RL_HL: {
+                Word addr = L | (H << 8);
+                Word data = read_byte(addr, cycles, mem);
+                data = rl_r(data);
+                write_byte(addr, data, cycles, mem);
+                break;
+            }
+            case INS_RL_A: {
+                A = rl_r(A);
+                break;
+            }
+
+            case INS_RR_B: {
+                B = rr_r(B);
+                break;
+            }
+            case INS_RR_C: {
+                C = rr_r(C);
+                break;
+            }
+            case INS_RR_D: {
+                D = rr_r(D);
+                break;
+            }
+            case INS_RR_E: {
+                E = rr_r(E);
+                break;
+            }
+            case INS_RR_H: {
+                H = rr_r(H);
+                break;
+            }
+            case INS_RR_L: {
+                L = rr_r(L);
+                break;
+            }
+            case INS_RR_HL: {
+                Word addr = L | (H << 8);
+                Word data = read_byte(addr, cycles, mem);
+                data = rr_r(data);
+                write_byte(addr, data, cycles, mem);
+                break;
+            }
+            case INS_RR_A: {
+                A = rr_r(A);
+                break;
+            }
+
+            default: {
+                printf("INVALID PREFIX INSTRUCTION\n");
+            }
+            }
+        }
+
         default: printf("UNKNOWN INSTRUCTION");
         }
         return cycles;
+    }
+
+    Byte rlc_r(Byte data) {
+        Byte last = (data & 0x80) > 0;
+        data <<= 1;
+        data |= last;
+        c = last;
+        z = data == 0;
+        n = 0;
+        h = 0;
+        return data;
+    }
+
+    Byte rrc_r(Byte data) {
+        Byte first = data & 1;
+        data >>= 1;
+        data |= first << 7;
+        c = first;
+        z = data == 0;
+        n = 0;
+        h = 0;
+        return data;
+    }
+
+    Byte rl_r(Byte data) {
+        Byte last = (data & 0x80) > 0;
+        data <<= 1;
+        data |= c & 1;
+        c = last;
+        z = data == 0;
+        n = 0;
+        h = 0;
+        return data;
+    }
+
+    Byte rr_r(Byte data) {
+        Byte first = data & 1;
+        data >>= 1;
+        data |= (c & 1) << 7;
+        c = first;
+        z = data == 0;
+        n = 0;
+        h = 0;
+        return data;
+    }
+
+    Byte sla_r(Byte data) {
+        Byte last = (data & 0x80) > 0;
+        data <<= 1;
+        c = last;
+        z = data == 0;
+        n = 0;
+        h = 0;
+        return data;
     }
 
     void debug() {
