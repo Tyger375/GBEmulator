@@ -1,7 +1,9 @@
 #include <iostream>
 #include "cpu/cpu.hpp"
+#include "timers/timers.hpp"
 
 int main() {
+    Timers timers;
     Memory mem;
     CPU cpu;
     mem.init();
@@ -10,7 +12,9 @@ int main() {
 
     u32 cycles = 0;
     while (1) {
-        cycles += cpu.execute(mem);
+        u32 c = cpu.execute(mem);
+        timers.update(c);
+        cycles += c;
         //printf("%d\n", cpu.PC);
     }
 
