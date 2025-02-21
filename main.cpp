@@ -8,7 +8,7 @@ int main() {
     CPU cpu;
     mem.init();
 
-    cpu.load_bootup("dmg_boot.bin", mem);
+    //cpu.load_bootup("dmg_boot.bin", mem);
 
     u32 cycles = 0;
     while (1) {

@@ -8,7 +8,7 @@ private:
 public:
     void init() {
         for (int i = 0; i < MAX_MEM; ++i) {
-            Data[i] = 1;
+            Data[i] = 0;
         }
     }
 
