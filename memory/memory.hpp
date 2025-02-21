@@ -1,9 +1,10 @@
+#pragma once
 #include "../defs.hpp"
 
 struct Memory {
 private:
     static constexpr u32 MAX_MEM = 64 * 1024;
-    Byte Data[MAX_MEM];
+    Byte Data[MAX_MEM] = {};
 
 public:
     void init() {
