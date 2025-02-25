@@ -20,6 +20,20 @@ public:
     Byte& operator[](u32 addr) {
         return Data[addr];
     }
+
+    void dump(const char* filename) {
+        std::ofstream file;
+        file.open(filename, std::ios::out | std::ios::binary);
+
+        if (file.is_open()) {
+            for (size_t i = 0; i < MAX_MEM; ++i) {
+                file << Data[i];
+            }
+        } else {
+            std::cerr << "Failed to open file " << filename << std::endl;
+        }
+        file.close();
+    }
 };
 
 
