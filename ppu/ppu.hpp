@@ -34,6 +34,9 @@ class PPU {
     static constexpr Word WY_REG = 0xFF4A;
     static constexpr Word WX_REG = 0xFF4B;
 
+    int pushes = 0;
+    int pops = 0;
+
 public:
     void init() {
         mode = 2;
@@ -90,7 +93,6 @@ public:
             std::cout << "WINDOW TILE AREA" << std::endl;
         } else {
             // Background tile
-            //std::cout << "BACKGROUND TILE AREA" << std::endl;
 
             Byte SCY = mem[SCY_REG];
             Byte SCX = mem[SCX_REG];
@@ -98,12 +100,9 @@ public:
             Word background_tile_area = (LCDC & 0b1000) > 0 ? 0x9C00 : 0x9800;
             Word addr = background_tile_area;
             Byte X = ((SCX / 8) + x_pos_counter) & 0x1F;
-            Byte Y = (LY + SCY) & 255;
+            Byte Y = ((LY + SCY) / 8) & 0x1F;
             addr += X + Y * 32;
-            //addr += x_pos_counter;
-            //addr += (SCX / 8) & 0x1F;
-            //addr += 32 * (((LY + SCY) & 0xFF) / 8);
-            background_tile_number = addr;
+            background_tile_number = mem[addr];
         }
 
         drawing_step++;
@@ -115,15 +114,16 @@ public:
         Byte LY = mem[LY_REG];
         Byte SCY = mem[SCY_REG];
 
-        Word addr = background_tile_number;
+        bool unsigned_method = ((LCDC & 0b10000) > 0);
+        Word addr = unsigned_method ? 0x8000 : 0x8800;
 
-        if ((LCDC & 0b10000) > 0) {
-            unsigned int offset = 2 * ((LY + SCY) % 8);
-            addr += offset;
+        if (unsigned_method) {
+            addr += static_cast<unsigned int>(background_tile_number) * 16;
         } else {
-            signed int offset = 2 * ((LY + SCY) % 8);
-            addr += offset;
+            addr += static_cast<signed int>(background_tile_number) * 16;
         }
+        addr += 2 * ((LY + SCY) % 8);
+
         background_tile_number = addr;
         tile_data_low = mem[addr];
         drawing_step++;
@@ -153,12 +153,14 @@ public:
         decode_tile(pixels);
         background_fifo.push(pixels);
 
+        pushes++;
+
         drawing_step = 1;
         x_pos_counter++;
 
         if (x_pos_counter >= 20) {
             mode = 0;
-            //x_pos_counter = 0;
+            x_pos_counter = 0;
         }
     }
 
@@ -188,12 +190,13 @@ public:
         }
     }
 
-    void pop_and_mix_to_lcd(u32 cycles, Memory& mem, LCD& lcd) {
+    void pop_and_mix_to_lcd(u32 cycles, LCD& lcd) {
         for (u32 i = 0; i < cycles; ++i) {
             if (background_fifo.is_empty()) return;
 
             Pixel pixel = background_fifo.pop();
             lcd.push(pixel);
+            pops++;
         }
     }
 
@@ -226,6 +229,7 @@ public:
                         } else {
                             mode = 2;
                         }
+                        break;
                     }
                 }
                 break;
@@ -238,6 +242,7 @@ public:
                         total_cycles = 0;
                         mem[LY_REG]++;
                         if (mem[LY_REG] >= 154) {
+                            mem[LY_REG] = 0;
                             lcd.reset();
                             mode = 2;
                             x_pos_counter = 0;
@@ -249,7 +254,7 @@ public:
             default: std::cerr << "Unknown mode" << std::endl;
         }
 
-        pop_and_mix_to_lcd(cycles, mem, lcd);
+        pop_and_mix_to_lcd(cycles, lcd);
 
         Byte LY = mem[LY_REG];
         Byte LYC = mem[LYC_REG];

@@ -7,11 +7,12 @@ project(GBEmulator)
 # Set the C++ standard
 set(CMAKE_CXX_STANDARD 17)
 
-set(GLFW_ROOT C:/glfw-3.4)
+# Find SDL2 package
+set(SDL3_DIR C:/SDL3-3.2.4/cmake)
+find_package(SDL3 REQUIRED)
 
-include_directories(${GLFW_ROOT}/include)
-set(GLFW_LIBRARY ${GLFW_ROOT}/build/src/Release/glfw3dll.lib)
-find_package(OpenGL REQUIRED)
+# Include SDL2 headers
+include_directories(${SDL3_INCLUDE_DIRS})
 
 # Add an executable target
 add_executable(GBEmulator
@@ -31,4 +32,7 @@ add_executable(GBEmulator
         memory/memory.hpp
         ppu/LCD.hpp
         ppu/fifo.hpp
+        profiling/profiling.hpp
 )
+
+target_link_libraries(GBEmulator ${SDL3_LIBRARIES})
