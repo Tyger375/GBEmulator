@@ -1,9 +1,8 @@
 #pragma once
+#include "utils/utils.hpp"
 
 class LCD {
-    static constexpr int DISPLAY_WIDTH = 160;
-    static constexpr int DISPLAY_HEIGHT = 144;
-    Byte display[DISPLAY_HEIGHT][DISPLAY_WIDTH] = {};
+    Byte* display = nullptr;
 
     int pos = 0;
 
@@ -14,29 +13,31 @@ class LCD {
     bool is_empty = true;
 public:
     void init() {
+        display = (Byte*)malloc(sizeof(Byte) * (DISPLAY_WIDTH * DISPLAY_HEIGHT));
+
         for (int y = 0; y < DISPLAY_HEIGHT; y++) {
             for (int x = 0; x < DISPLAY_WIDTH; x++) {
-                display[y][x] = 0;
+                display[y * DISPLAY_WIDTH + x] = 0;
             }
         }
     }
 
     Byte get(int x, int y) const {
-        return display[y][x];
+        return display[y * DISPLAY_WIDTH + x];
     }
 
-    void push(Pixel pixel) {
-        int y = pos / DISPLAY_WIDTH;
-        int x = pos % DISPLAY_WIDTH;
+    Byte* get_display() const { return display; }
 
-        display[y][x] = pixel.color;
+    void push(Pixel pixel) {
+        display[pos] = VideoUtils::palette_to_color(pixel);
 
         // Debugging (enhancing performances)
-        if (pixel.color > 0) is_empty = false;
+        if (pixel.color > 0)
+            is_empty = false;
         pos++;
     }
 
-    bool is_ready() { return pos >= (DISPLAY_WIDTH * DISPLAY_HEIGHT) - 1; }
+    bool is_ready() const { return pos >= (DISPLAY_WIDTH * DISPLAY_HEIGHT) - 1; }
 
     void reset() {
         pos = 0;
@@ -46,7 +47,7 @@ public:
     void debug() {
         for (int y = 0; y < DISPLAY_HEIGHT; y++) {
             for (int x = 0; x < DISPLAY_WIDTH; x++) {
-                Byte value = display[y][x];
+                Byte value = display[y * DISPLAY_WIDTH + x];
                 if (value == 0)
                     std::cout << " ";
                 else

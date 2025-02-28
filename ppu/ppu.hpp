@@ -1,17 +1,16 @@
 #pragma once
-#include "oam.hpp"
 #include <iostream>
 #include <vector>
 #include <queue>
-
 #include "fifo.hpp"
 #include "LCD.hpp"
+#include "../memory/memory.hpp"
 
 class PPU {
     int mode = 0;
     u32 total_cycles = 0;
 
-    std::vector<OAM::Sprite> sprites_buffer;
+    std::vector<VideoUtils::OAM::Sprite> sprites_buffer;
 
     Word background_tile_number = 0;
     Byte tile_data_low = 0;
@@ -28,6 +27,8 @@ class PPU {
     static constexpr Word LYC_REG = 0xFF45;
     static constexpr Word LCDS_REG = 0xFF41;
 
+    static constexpr Word BGP_REG = 0xFF47;
+
     static constexpr Word SCY_REG = 0xFF42;
     static constexpr Word SCX_REG = 0xFF43;
 
@@ -37,6 +38,7 @@ class PPU {
     int pushes = 0;
     int pops = 0;
 
+    u32 ins_for_ly = 0;
 public:
     void init() {
         mode = 2;
@@ -52,9 +54,9 @@ public:
 
             Byte LY = mem[LY_REG];
 
-            Word index = OAM::OAM + i * 4;
+            Word index = VideoUtils::OAM::OAM + i * 4;
 
-            OAM::Sprite sprite = OAM::fetch_sprite(index, mem);
+            VideoUtils::OAM::Sprite sprite = VideoUtils::OAM::fetch_sprite(index, mem);
 
             if (
                 sprite.x_pos > 0 &&
@@ -76,93 +78,12 @@ public:
         }
     }
 
-    void background_fetch_tile_number(Memory& mem) {
-        Byte LCDC = mem[LCDC_REG];
-
-        if ((LCDC & 0x1) == 0)
-            return;
-
-        bool window_enable = (LCDC & 0b100000) > 0;
-        Byte LY = mem[LY_REG];
-        Byte WY = mem[WY_REG];
-
-        if (window_enable && LY >= WY) {
-            // Window tile
-            Word window_tile_area = (LCDC & 0b1000000) > 0 ? 0x9C00 : 0x9800;
-            Word addr = window_tile_area + x_pos_counter + 32 * (window_line_counter / 8);
-            std::cout << "WINDOW TILE AREA" << std::endl;
-        } else {
-            // Background tile
-
-            Byte SCY = mem[SCY_REG];
-            Byte SCX = mem[SCX_REG];
-
-            Word background_tile_area = (LCDC & 0b1000) > 0 ? 0x9C00 : 0x9800;
-            Word addr = background_tile_area;
-            Byte X = ((SCX / 8) + x_pos_counter) & 0x1F;
-            Byte Y = ((LY + SCY) / 8) & 0x1F;
-            addr += X + Y * 32;
-            background_tile_number = mem[addr];
-        }
-
-        drawing_step++;
-    }
-
-    void background_fetch_tile_data_low(Memory& mem) {
-        Byte LCDC = mem[LCDC_REG];
-
-        Byte LY = mem[LY_REG];
-        Byte SCY = mem[SCY_REG];
-
-        bool unsigned_method = ((LCDC & 0b10000) > 0);
-        Word addr = unsigned_method ? 0x8000 : 0x8800;
-
-        if (unsigned_method) {
-            addr += static_cast<unsigned int>(background_tile_number) * 16;
-        } else {
-            addr += static_cast<signed int>(background_tile_number) * 16;
-        }
-        addr += 2 * ((LY + SCY) % 8);
-
-        background_tile_number = addr;
-        tile_data_low = mem[addr];
-        drawing_step++;
-    }
-
-    void background_fetch_tile_data_high(Memory& mem) {
-        tile_data_high = mem[background_tile_number + 1];
-        drawing_step++;
-        // TODO: reset if first iteration
-    }
-
-    void decode_tile(Pixel* pixels) {
-        for (int i = 0; i < 8; ++i) {
-            Byte mask = 1 << (7 - i);
-            Byte first = (tile_data_low & mask) > 0;
-            Byte second = (tile_data_high & mask) > 0;
-
-            // TODO: fix
-            pixels[i] = {first + second, 0, 0};
-        }
-    }
-
-    void background_push_tile_data() {
-        if (!background_fifo.is_empty()) return;
-
-        Pixel pixels[8];
-        decode_tile(pixels);
-        background_fifo.push(pixels);
-
-        pushes++;
-
-        drawing_step = 1;
-        x_pos_counter++;
-
-        if (x_pos_counter >= 20) {
-            mode = 0;
-            x_pos_counter = 0;
-        }
-    }
+    // Background / Window processing
+    void background_fetch_tile_number(Memory&);
+    void background_fetch_tile_data_low(Memory&);
+    void background_fetch_tile_data_high(Memory&);
+    void decode_background_tile(Pixel*, Memory&) const;
+    void background_push_tile_data(Memory&);
 
     void draw(u32 cycles, Memory& mem) {
         for (u32 i = 0; i < cycles / 2; ++i) {
@@ -182,7 +103,7 @@ public:
                     break;
                 }
                 case 4: {
-                    background_push_tile_data();
+                    background_push_tile_data(mem);
                     break;
                 }
                 default: break;
@@ -209,17 +130,19 @@ public:
         Byte LCDC = mem[LCDC_REG];
         if ((LCDC & 0x80) == 0) return;
 
-        switch (mode) {
-            case 2: {
-                oam_scan(cycles, mem);
-                break;
-            }
-            case 3: {
-                draw(cycles, mem);
-                break;
-            }
-            case 0: {
-                for (u32 i = 0; i < cycles / 2; ++i) {
+        Byte old_LY = mem[LY_REG];
+
+        for (u32 i = 0; i < cycles / 2; ++i) {
+            switch (mode) {
+                case 2: {
+                    oam_scan(2, mem);
+                    break;
+                }
+                case 3: {
+                    draw(2, mem);
+                    break;
+                }
+                case 0: {
                     total_cycles += 2;
                     if (total_cycles >= 456) {
                         total_cycles = 0;
@@ -231,12 +154,10 @@ public:
                         }
                         break;
                     }
+                    break;
                 }
-                break;
-            }
-            case 1: {
-                //VBlank
-                for (u32 i = 0; i < cycles / 2; ++i) {
+                case 1: {
+                    //VBlank
                     total_cycles += 2;
                     if (total_cycles >= 456) {
                         total_cycles = 0;
@@ -248,16 +169,21 @@ public:
                             x_pos_counter = 0;
                         }
                     }
+                    break;
                 }
-                break;
+                default: std::cerr << "Unknown mode" << std::endl;
             }
-            default: std::cerr << "Unknown mode" << std::endl;
         }
 
         pop_and_mix_to_lcd(cycles, lcd);
 
         Byte LY = mem[LY_REG];
         Byte LYC = mem[LYC_REG];
+
+        if (old_LY == LY)
+            ins_for_ly++;
+        else
+            ins_for_ly = 0;
 
         Byte value = mem[LCDS_REG] & (~0b111);
         value |= (LY == LYC) << 2;

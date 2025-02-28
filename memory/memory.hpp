@@ -1,5 +1,7 @@
 #pragma once
 #include "../defs.hpp"
+#include <fstream>
+#include <iostream>
 
 struct Memory {
 private:

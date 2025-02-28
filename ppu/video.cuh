@@ -1,0 +1,1 @@
+void build_video(Byte*, u32, u32, Uint32*, int);

@@ -1,7 +1,8 @@
 #pragma once
+#include "../defs.hpp"
+#include "../memory/memory.hpp"
 #include <iostream>
 #include <fstream>
-#include "../memory/memory.hpp"
 #define DEBUG(byte) printf("%#02X\n", byte)
 
 struct CPU {
