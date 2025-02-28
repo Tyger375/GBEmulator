@@ -6,15 +6,18 @@
 #define DEBUG(byte) printf("%#02X\n", byte)
 
 struct CPU {
-    Byte A, B, C, D, E, H, L;
+    Byte A{}, B{}, C{}, D{}, E{}, H{}, L{};
 
-    Word SP;
-    Word PC;
+    Word SP{};
+    Word PC{};
 
     // flags
-    Byte z, n, h, c, IME;
+    Byte z{}, n{}, h{}, c{}, IME{};
 
 	bool old_lcd_int_flag = false;
+
+    bool is_boot = false;
+    Byte rom_first[0x100]{};
 
     Byte fetch_byte(u32& cycles, Memory& mem);
     Word fetch_word(u32& cycles, Memory& mem);
@@ -33,35 +36,18 @@ struct CPU {
     Byte res_r(Byte data, Byte bit);
     Byte set_r(Byte data, Byte bit);
 
-    void load_bootup(const char* filename, Memory& mem) {
-    	std::ifstream file;
-	    file.open(filename, std::ios::in | std::ios::binary);
-
-    	if (file.is_open()) {
-	        for (size_t i = 0; i < 256; ++i) {
-                Byte value = 0;
-        		file.read((char*)&value, sizeof(char));
-                mem[i] = value;
-    	    }
-    	} else {
-    		std::cerr << "Failed to open file " << filename << std::endl;
-    	}
-    	file.close();
-    }
-
-    void debug() {
-        DEBUG(A);
-        DEBUG(B);
-        DEBUG(C);
-        DEBUG(D);
-        DEBUG(H);
-        DEBUG(L);
-    }
+    void load_bootup(const char* filename, Memory& mem);
+    void load_rom(const char* filename, Memory& mem);
 
 	static constexpr Word IE_REG = 0xFFFF;
 	static constexpr Word IF_REG = 0xFF0F;
 
     static constexpr Byte INS_NOP = 0x00;
+    static constexpr Byte INS_HALT = 0x76;
+    static constexpr Byte INS_STOP = 0x10;
+    static constexpr Byte INS_DI = 0xF3;
+    static constexpr Byte INS_EI = 0xFB;
+
     // 8-BIT LOAD INSTRUCTIONS
     static constexpr Byte INS_LD_BB = 0x40;
     static constexpr Byte INS_LD_BC = 0x41;
@@ -640,15 +626,9 @@ struct CPU {
     static constexpr Byte INS_SET_7A = 0xFF;
 
 	void call_int(Memory&, Word);
+    void ack_int(Memory&, int);
 	void handle_interrupts(Memory&);
 	void exec_op(u32&, Memory&);
 
-    u32 execute(Memory& mem) {
-        u32 cycles = 0;
-
-    	handle_interrupts(mem);
-    	exec_op(cycles, mem);
-
-        return cycles;
-    }
+    u32 execute(Memory& mem);
 };

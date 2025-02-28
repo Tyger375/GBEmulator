@@ -27,6 +27,10 @@ void CPU::call_int(Memory& mem, Word addr) {
     PC = addr;
 }
 
+void CPU::ack_int(Memory& mem, int bit) {
+    IME = 0;
+    mem[IF_REG] &= ~(1 << bit);
+}
 
 void CPU::handle_interrupts(Memory& mem) {
     if (IME == 0)
@@ -36,12 +40,14 @@ void CPU::handle_interrupts(Memory& mem) {
     Byte IF = mem[IF_REG];
 
     if (is_vblank_int(IE, IF)) {
+        ack_int(mem, 0);
         call_int(mem, 0x0040);
         return;
     }
 
     bool lcd = is_lcd_int(IE, IF);
     if (lcd && !old_lcd_int_flag) {
+        ack_int(mem, 1);
         call_int(mem, 0x0040);
         old_lcd_int_flag = lcd;
         return;
@@ -49,11 +55,13 @@ void CPU::handle_interrupts(Memory& mem) {
     old_lcd_int_flag = lcd;
 
     if (is_timer_int(IE, IF)) {
+        ack_int(mem, 2);
         call_int(mem, 0x0050);
         return;
     }
 
     if (is_joypad_int(IE, IF)) {
+        ack_int(mem, 4);
         call_int(mem, 0x0060);
     }
 }

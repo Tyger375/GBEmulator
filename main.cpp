@@ -6,7 +6,13 @@
 #include "ppu/ppu.hpp"
 #include <SDL3/SDL.h>
 #include "profiling/profiling.hpp"
-#include "ppu/video.cuh"
+#include "ppu/gpu/gpu.cuh"
+
+#ifndef USE_PROFILING
+#define USE_PROFILING false
+#endif
+#define PROFILE(name) if(USE_PROFILING) profiling.add_task(name)
+#define RESET_PROFILING() profiling.reset()
 
 int main() {
     Timers timers;
@@ -25,7 +31,6 @@ int main() {
     }
 
     int scale = 5;
-
     SDL_Window* window = SDL_CreateWindow(
         "GBEmulator",
         DISPLAY_WIDTH * scale, DISPLAY_HEIGHT * scale,
@@ -38,55 +43,49 @@ int main() {
     }
 
     SDL_Surface* surface = SDL_GetWindowSurface(window);
-    auto format = SDL_GetPixelFormatDetails(surface->format);
+    auto pixels = static_cast<Uint32*>(surface->pixels);
 
     cpu.load_bootup("dmg_boot.bin", mem);
+    cpu.load_rom("tetris.gb", mem);
 
     bool rendered = false;
 
-    Profiling::TimeMeasure time_measure;
+    Profiling::TimeMeasure profiling;
 
     u32 cycles = 0;
-    while (1) {
-        time_measure.reset();
+    bool running = true;
+    while (running) {
+        RESET_PROFILING();
 
         SDL_Event Event;
         while(SDL_PollEvent(&Event)) {
-            // TODO: handle window events
+            if (Event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
+                running = false;
+                break;
+            }
         }
 
-        // Debugging
-        if (cpu.PC == 0xE9) {
-            //mem.dump("dump.bin");
-            //lcd.debug();
-        }
         u32 c = cpu.execute(mem);
-        time_measure.add_task("CPU");
+        PROFILE("CPU");
         timers.update(c, mem);
-        time_measure.add_task("Timers");
+        PROFILE("Timers");
         ppu.update(c * 4, mem, lcd);
-        time_measure.add_task("PPU");
+        PROFILE("PPU");
         cycles += c;
 
         /*
          * TEMPORARY
          * Hard coding some logic so that I don't lose performance for now
          **/
-        if (lcd.is_ready() && !lcd.is_full_empty() && !rendered) {
-            auto pixels = static_cast<Uint32*>(surface->pixels);
-
+        if (lcd.is_ready() && !rendered) {
             build_video(lcd.get_display(), DISPLAY_WIDTH, DISPLAY_HEIGHT, pixels, scale);
             rendered = true;
 
             SDL_UpdateWindowSurface(window);
-            time_measure.add_task("Render");
-
-            time_measure.profile();
+            PROFILE("Render");
         } else if (!lcd.is_ready()) {
             rendered = false;
         }
-
-
     }
 
     return 0;

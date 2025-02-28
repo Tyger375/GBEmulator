@@ -1,8 +1,8 @@
 #include <cuda_runtime.h>
 #include <cstdio>
 #include <SDL3/SDL_stdinc.h>
-#include "../defs.hpp"
-#include "video.cuh"
+#include "../../defs.hpp"
+#include "gpu.cuh"
 
 __device__ unsigned int mapRGB(unsigned char r, unsigned char g, unsigned char b) {
     // Assume RGB888 format (8 bits per channel)

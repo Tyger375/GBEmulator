@@ -16,25 +16,30 @@ add_executable(GBEmulator
         defs.hpp
 
         cpu/cpu.hpp
-        cpu/cpu.cpp
+        cpu/cpu_utils.cpp
         cpu/cpu_ops.cpp
+        cpu/cpu_loads.cpp
         cpu/interrupts.cpp
 
         ppu/ppu.hpp
         ppu/LCD.hpp
         ppu/fifo.hpp
+        ppu/bg_ppu.cpp
+        ppu/utils/utils.hpp
+        ppu/utils/utils.cpp
+        ppu/gpu/gpu.cu
+        ppu/gpu/gpu.cuh
 
         timers/timers.hpp
 
         memory/memory.hpp
 
         profiling/profiling.hpp
-
-        ppu/video.cu
-        ppu/video.cuh
-        ppu/bg_ppu.cpp
-        ppu/utils/utils.hpp
-        ppu/utils/utils.cpp
+        memory/memory.cpp
+        cpu/cpu.cpp
+        ppu/oam_ppu.cpp
+        ppu/ppu.cpp
+        timers/timers.cpp
 )
 
 set_target_properties(GBEmulator PROPERTIES

@@ -5,6 +5,23 @@ void CPU::exec_op(u32 &cycles, Memory& mem) {
         case INS_NOP: {
             break;
         }
+        case INS_STOP: {
+            std::cerr << "STOP instruction not implemented" << std::endl;
+            break;
+        }
+        case INS_HALT: {
+            std::cerr << "HALT instruction not implemented" << std::endl;
+            break;
+        }
+        case INS_DI: {
+            IME = 0;
+            break;
+        }
+        case INS_EI: {
+            IME = 1;
+            break;
+        }
+
         case INS_LD_BB: {
             B = B;
             break;
@@ -269,7 +286,7 @@ void CPU::exec_op(u32 &cycles, Memory& mem) {
             break;
         }
         case INS_LD_HLN: {
-            Word value = fetch_byte(cycles, mem);
+            Byte value = fetch_byte(cycles, mem);
             Word addr = L | (H << 8);
             write_byte(addr, value, cycles, mem);
             break;
@@ -708,7 +725,7 @@ void CPU::exec_op(u32 &cycles, Memory& mem) {
             Byte big = read_byte(SP+1, cycles, mem);
             SP += 2;
             PC = little | (big << 8);
-            // TODO SET IME
+            IME = 1;
             cycles++;
             break;
         }
@@ -1818,7 +1835,7 @@ void CPU::exec_op(u32 &cycles, Memory& mem) {
             }
             case INS_RL_HL: {
                 Word addr = L | (H << 8);
-                Word data = read_byte(addr, cycles, mem);
+                Byte data = read_byte(addr, cycles, mem);
                 data = rl_r(data);
                 write_byte(addr, data, cycles, mem);
                 break;
@@ -1854,7 +1871,7 @@ void CPU::exec_op(u32 &cycles, Memory& mem) {
             }
             case INS_RR_HL: {
                 Word addr = L | (H << 8);
-                Word data = read_byte(addr, cycles, mem);
+                Byte data = read_byte(addr, cycles, mem);
                 data = rr_r(data);
                 write_byte(addr, data, cycles, mem);
                 break;
@@ -1890,7 +1907,7 @@ void CPU::exec_op(u32 &cycles, Memory& mem) {
             }
             case INS_SLA_HL: {
                 Word addr = L | (H << 8);
-                Word data = read_byte(addr, cycles, mem);
+                Byte data = read_byte(addr, cycles, mem);
                 data = sla_r(data);
                 write_byte(addr, data, cycles, mem);
                 break;
@@ -1926,7 +1943,7 @@ void CPU::exec_op(u32 &cycles, Memory& mem) {
             }
             case INS_SRA_HL: {
                 Word addr = L | (H << 8);
-                Word data = read_byte(addr, cycles, mem);
+                Byte data = read_byte(addr, cycles, mem);
                 data = sra_r(data);
                 write_byte(addr, data, cycles, mem);
                 break;
@@ -1962,7 +1979,7 @@ void CPU::exec_op(u32 &cycles, Memory& mem) {
             }
             case INS_SWAP_HL: {
                 Word addr = L | (H << 8);
-                Word data = read_byte(addr, cycles, mem);
+                Byte data = read_byte(addr, cycles, mem);
                 data = swap_r(data);
                 write_byte(addr, data, cycles, mem);
                 break;
@@ -1998,7 +2015,7 @@ void CPU::exec_op(u32 &cycles, Memory& mem) {
             }
             case INS_SRL_HL: {
                 Word addr = L | (H << 8);
-                Word data = read_byte(addr, cycles, mem);
+                Byte data = read_byte(addr, cycles, mem);
                 data = srl_r(data);
                 write_byte(addr, data, cycles, mem);
                 break;
@@ -2871,6 +2888,6 @@ void CPU::exec_op(u32 &cycles, Memory& mem) {
             break;
         }
 
-        default: printf("UNKNOWN INSTRUCTION: %d\n", ins);
+        default: printf("UNKNOWN INSTRUCTION: %d at %d\n", ins, PC);
         }
 }

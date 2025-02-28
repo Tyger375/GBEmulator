@@ -3,8 +3,10 @@
 void PPU::background_fetch_tile_number(Memory& mem) {
     Byte LCDC = mem[LCDC_REG];
 
-    if ((LCDC & 0x1) == 0)
+    if ((LCDC & 0x1) == 0) {
+        drawing_step++;
         return;
+    }
 
     bool window_enable = (LCDC & 0b100000) > 0;
     Byte LY = mem[LY_REG];
@@ -12,6 +14,7 @@ void PPU::background_fetch_tile_number(Memory& mem) {
 
     if (window_enable && LY >= WY) {
         // Window tile
+        // TODO
         Word window_tile_area = (LCDC & 0b1000000) > 0 ? 0x9C00 : 0x9800;
         Word addr = window_tile_area + x_pos_counter + 32 * (window_line_counter / 8);
         std::cout << "WINDOW TILE AREA" << std::endl;
@@ -35,6 +38,11 @@ void PPU::background_fetch_tile_number(Memory& mem) {
 void PPU::background_fetch_tile_data_low(Memory& mem) {
     Byte LCDC = mem[LCDC_REG];
 
+    if ((LCDC & 0x1) == 0) {
+        drawing_step++;
+        return;
+    }
+
     Byte LY = mem[LY_REG];
     Byte SCY = mem[SCY_REG];
 
@@ -54,6 +62,13 @@ void PPU::background_fetch_tile_data_low(Memory& mem) {
 }
 
 void PPU::background_fetch_tile_data_high(Memory& mem) {
+    Byte LCDC = mem[LCDC_REG];
+
+    if ((LCDC & 0x1) == 0) {
+        drawing_step++;
+        return;
+    }
+
     tile_data_high = mem[background_tile_number + 1];
     drawing_step++;
     // TODO: reset if first iteration
@@ -65,7 +80,6 @@ void PPU::decode_background_tile(Pixel* pixels, Memory& mem) const {
         Byte first = (tile_data_low & mask) > 0;
         Byte second = (tile_data_high & mask) > 0;
 
-        // TODO: fix
         Byte BGP = mem[BGP_REG];
         pixels[i] = {first + second, BGP, 0};
     }
