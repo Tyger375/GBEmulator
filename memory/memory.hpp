@@ -7,7 +7,6 @@ struct Memory {
 private:
     static constexpr u32 MAX_MEM = 64 * 1024;
     Byte Data[MAX_MEM] = {};
-
 public:
     void init();
 

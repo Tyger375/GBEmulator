@@ -1,18 +1,21 @@
+#include <SDL3/SDL.h>
 #include <chrono>
 #include <iostream>
+#include <string>
 #include "memory/memory.hpp"
 #include "cpu/cpu.hpp"
 #include "timers/timers.hpp"
 #include "ppu/ppu.hpp"
-#include <SDL3/SDL.h>
 #include "profiling/profiling.hpp"
 #include "ppu/gpu/gpu.cuh"
+#include "dma/dma.hpp"
+#include "joypad/joypad.hpp"
 
 #ifndef USE_PROFILING
 #define USE_PROFILING false
 #endif
 #define PROFILE(name) if(USE_PROFILING) profiling.add_task(name)
-#define RESET_PROFILING() profiling.reset()
+#define RESET_PROFILING() if (USE_PROFILING) profiling.reset()
 
 int main() {
     Timers timers;
@@ -20,6 +23,8 @@ int main() {
     CPU cpu{};
     PPU ppu{};
     LCD lcd{};
+    DMA dma{};
+    Joypad joypad{};
 
     mem.init();
     ppu.init();
@@ -59,11 +64,15 @@ int main() {
 
         SDL_Event Event;
         while(SDL_PollEvent(&Event)) {
+            if (joypad.keyboard_event(Event)) continue;
+
             if (Event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
                 running = false;
                 break;
             }
         }
+
+        joypad.update(mem);
 
         u32 c = cpu.execute(mem);
         PROFILE("CPU");
@@ -71,6 +80,7 @@ int main() {
         PROFILE("Timers");
         ppu.update(c * 4, mem, lcd);
         PROFILE("PPU");
+        dma.update(c, mem);
         cycles += c;
 
         /*
@@ -87,6 +97,8 @@ int main() {
             rendered = false;
         }
     }
+
+    SDL_Quit();
 
     return 0;
 }

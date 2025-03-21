@@ -4,7 +4,7 @@
 #include <SDL3/SDL_pixels.h>
 #include "../../defs.hpp"
 #include "../../memory/memory.hpp"
-#include "../fifo.hpp"
+#include "../FIFO/FIFO.hpp"
 
 namespace VideoUtils {
     Uint32 color_to_rgb(const SDL_PixelFormatDetails*, Byte);

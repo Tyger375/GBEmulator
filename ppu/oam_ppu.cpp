@@ -5,20 +5,21 @@ void PPU::oam_scan(u32 cycles, Memory& mem) {
 
     // Every step completed every 2 T-Cycles
     for (u32 i = 0; i < cycles / 2; ++i) {
-        if (sprites_buffer.size() >= 10) return;
+        if (sprites_buffer.size() < 10) {
+            Byte LY = mem[LY_REG];
 
-        Byte LY = mem[LY_REG];
+            Word index = VideoUtils::OAM::OAM + i * 4;
 
-        Word index = VideoUtils::OAM::OAM + i * 4;
+            VideoUtils::OAM::Sprite sprite = VideoUtils::OAM::fetch_sprite(index, mem);
 
-        VideoUtils::OAM::Sprite sprite = VideoUtils::OAM::fetch_sprite(index, mem);
-
-        if (
-                sprite.x_pos > 0 &&
-                LY + 16u >= sprite.y_pos &&
-                LY + 16u < sprite.y_pos + sprite_height
-                ) {
-            sprites_buffer.push_back(sprite);
+            // TODO: ignore already added sprites
+            if (
+                    sprite.x_pos > 0 &&
+                    LY + 16u >= sprite.y_pos &&
+                    LY + 16u < sprite.y_pos + sprite_height
+                    ) {
+                sprites_buffer.push_back(sprite);
+            }
         }
 
         total_cycles += 2;
@@ -27,8 +28,111 @@ void PPU::oam_scan(u32 cycles, Memory& mem) {
             total_cycles = 0;
             mode = 3;
             drawing_step = 1;
+            sprites_drawing_step = 1;
 
             return;
         }
+    }
+}
+
+void PPU::sprites_fetch_tile_number(Memory& mem) {
+    Byte LCDC = mem[LCDC_REG];
+
+    if ((LCDC & 0x2) == 0) {
+        sprites_drawing_step++;
+        return;
+    }
+
+    bool found = false;
+    VideoUtils::OAM::Sprite sprite{};
+    for (auto s : sprites_buffer) {
+        if (s.x_pos <= x_pos_counter + 8) {
+            found = true;
+            sprite = s;
+            break;
+        }
+    }
+
+    if (!found) {
+        sprites_drawing_step = 1;
+        return;
+    }
+
+    sprite_tile_number = sprite.tile_number;
+    sprites_drawing_step++;
+}
+
+void PPU::sprites_fetch_tile_data_low(Memory& mem) {
+    Byte LCDC = mem[LCDC_REG];
+
+    if ((LCDC & 0x2) == 0) {
+        sprites_drawing_step++;
+        return;
+    }
+
+    Byte LY = mem[LY_REG];
+    Byte SCY = mem[SCY_REG];
+
+    Word addr = 0x8000;
+    addr += static_cast<unsigned int>(sprite_tile_number) * 16;
+    //addr += 2 * ((LY + SCY) % 8);
+
+    sprite_tile_number = addr;
+    sprite_tile_data_low = mem[addr];
+    sprites_drawing_step++;
+}
+
+void PPU::sprites_fetch_tile_data_high(Memory& mem) {
+    Byte LCDC = mem[LCDC_REG];
+
+    if ((LCDC & 0x2) == 0) {
+        sprites_drawing_step++;
+        return;
+    }
+
+    sprite_tile_data_high = mem[sprite_tile_number + 1];
+    sprites_drawing_step++;
+}
+
+void PPU::decode_sprite_tile(Pixel* pixels, Memory& mem) const {
+    for (int i = 0; i < 8; ++i) {
+        Byte mask = 1 << (7 - i);
+        Byte first = (tile_data_low & mask) > 0;
+        Byte second = (tile_data_high & mask) > 0;
+
+        Byte BGP = mem[BGP_REG];
+        pixels[i] = {first + second, BGP, 1};
+    }
+}
+
+void PPU::sprites_push_tile_data(Memory& mem) {
+    if (!oam_fifo.is_empty()) return;
+
+    Pixel pixels[8];
+    decode_sprite_tile(pixels, mem);
+    oam_fifo.push(pixels);
+
+    sprites_drawing_step = 1;
+}
+
+void PPU::sprites_draw(Memory& mem) {
+    switch (sprites_drawing_step) {
+        case 1: {
+            sprites_fetch_tile_number(mem);
+            break;
+        }
+        case 2: {
+            sprites_fetch_tile_data_low(mem);
+            break;
+        }
+        case 3: {
+            sprites_fetch_tile_data_high(mem);
+            break;
+        }
+        case 4: {
+            sprites_push_tile_data(mem);
+            break;
+        }
+        default: return;
     }
 }

@@ -17,7 +17,8 @@ void PPU::background_fetch_tile_number(Memory& mem) {
         // TODO
         Word window_tile_area = (LCDC & 0b1000000) > 0 ? 0x9C00 : 0x9800;
         Word addr = window_tile_area + x_pos_counter + 32 * (window_line_counter / 8);
-        std::cout << "WINDOW TILE AREA" << std::endl;
+        background_tile_number = mem[addr];
+        //std::cout << "WINDOW TILE AREA" << std::endl;
     } else {
         // Background tile
 
@@ -92,13 +93,33 @@ void PPU::background_push_tile_data(Memory& mem) {
     decode_background_tile(pixels, mem);
     background_fifo.push(pixels);
 
-    pushes++;
-
     drawing_step = 1;
     x_pos_counter++;
 
     if (x_pos_counter >= 20) {
         mode = 0;
         x_pos_counter = 0;
+    }
+}
+
+void PPU::background_draw(Memory& mem) {
+    switch (drawing_step) {
+        case 1: {
+            background_fetch_tile_number(mem);
+            break;
+        }
+        case 2: {
+            background_fetch_tile_data_low(mem);
+            break;
+        }
+        case 3: {
+            background_fetch_tile_data_high(mem);
+            break;
+        }
+        case 4: {
+            background_push_tile_data(mem);
+            break;
+        }
+        default: return;
     }
 }

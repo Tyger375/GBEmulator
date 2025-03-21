@@ -16,33 +16,39 @@ add_executable(GBEmulator
         defs.hpp
 
         cpu/cpu.hpp
+        cpu/cpu.cpp
         cpu/cpu_utils.cpp
         cpu/cpu_ops.cpp
         cpu/cpu_loads.cpp
         cpu/interrupts.cpp
 
         ppu/ppu.hpp
-        ppu/LCD.hpp
-        ppu/fifo.hpp
+        ppu/ppu.cpp
         ppu/bg_ppu.cpp
+        ppu/oam_ppu.cpp
+        ppu/LCD/LCD.hpp
+        ppu/LCD/LCD.cpp
+        ppu/FIFO/FIFO.hpp
+        ppu/FIFO/FIFO.cpp
         ppu/utils/utils.hpp
         ppu/utils/utils.cpp
         ppu/gpu/gpu.cu
         ppu/gpu/gpu.cuh
 
         timers/timers.hpp
+        timers/timers.cpp
 
         memory/memory.hpp
+        memory/memory.cpp
 
         profiling/profiling.hpp
-        memory/memory.cpp
-        cpu/cpu.cpp
-        ppu/oam_ppu.cpp
-        ppu/ppu.cpp
-        timers/timers.cpp
+
+        dma/dma.cpp
+        dma/dma.hpp
+        joypad/joypad.hpp
 )
 
 set_target_properties(GBEmulator PROPERTIES
         CUDA_SEPARABLE_COMPILATION ON)
 
-target_link_libraries(GBEmulator ${SDL3_LIBRARIES})
+target_link_libraries(GBEmulator SDL3::SDL3)
