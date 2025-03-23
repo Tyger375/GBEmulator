@@ -8,11 +8,10 @@ void PPU::oam_scan(u32 cycles, Memory& mem) {
         if (sprites_buffer.size() < 10) {
             Byte LY = mem[LY_REG];
 
-            Word index = VideoUtils::OAM::OAM + i * 4;
+            Word index = VideoUtils::OAM::OAM + (total_cycles / 2) * 4;
 
             VideoUtils::OAM::Sprite sprite = VideoUtils::OAM::fetch_sprite(index, mem);
 
-            // TODO: ignore already added sprites
             if (
                     sprite.x_pos > 0 &&
                     LY + 16u >= sprite.y_pos &&
@@ -27,6 +26,10 @@ void PPU::oam_scan(u32 cycles, Memory& mem) {
         if (total_cycles >= 80) {
             total_cycles = 0;
             mode = 3;
+
+            background_fifo.empty();
+            oam_fifo.empty();
+
             drawing_step = 1;
             sprites_drawing_step = 1;
 
@@ -36,25 +39,26 @@ void PPU::oam_scan(u32 cycles, Memory& mem) {
 }
 
 void PPU::sprites_fetch_tile_number(Memory& mem) {
+    if (background_fifo.is_empty()) return;
+
     Byte LCDC = mem[LCDC_REG];
 
     if ((LCDC & 0x2) == 0) {
-        sprites_drawing_step++;
         return;
     }
 
     bool found = false;
     VideoUtils::OAM::Sprite sprite{};
     for (auto s : sprites_buffer) {
-        if (s.x_pos <= x_pos_counter + 8) {
+        if (s.x_pos == (x_pos_counter * 8)) {
             found = true;
             sprite = s;
+            drawing_step = 1;
             break;
         }
     }
 
     if (!found) {
-        sprites_drawing_step = 1;
         return;
     }
 
@@ -75,7 +79,7 @@ void PPU::sprites_fetch_tile_data_low(Memory& mem) {
 
     Word addr = 0x8000;
     addr += static_cast<unsigned int>(sprite_tile_number) * 16;
-    //addr += 2 * ((LY + SCY) % 8);
+    addr += 2 * ((LY + SCY) % 8);
 
     sprite_tile_number = addr;
     sprite_tile_data_low = mem[addr];
@@ -97,8 +101,8 @@ void PPU::sprites_fetch_tile_data_high(Memory& mem) {
 void PPU::decode_sprite_tile(Pixel* pixels, Memory& mem) const {
     for (int i = 0; i < 8; ++i) {
         Byte mask = 1 << (7 - i);
-        Byte first = (tile_data_low & mask) > 0;
-        Byte second = (tile_data_high & mask) > 0;
+        Byte first = (sprite_tile_data_low & mask) > 0;
+        Byte second = (sprite_tile_data_high & mask) > 0;
 
         Byte BGP = mem[BGP_REG];
         pixels[i] = {first + second, BGP, 1};
@@ -106,7 +110,17 @@ void PPU::decode_sprite_tile(Pixel* pixels, Memory& mem) const {
 }
 
 void PPU::sprites_push_tile_data(Memory& mem) {
-    if (!oam_fifo.is_empty()) return;
+    Byte LCDC = mem[LCDC_REG];
+
+    if ((LCDC & 0x2) == 0) {
+        sprites_drawing_step = 1;
+        return;
+    }
+
+    if (!oam_fifo.is_empty()) {
+        sprites_drawing_step = 1;
+        return;
+    }
 
     Pixel pixels[8];
     decode_sprite_tile(pixels, mem);

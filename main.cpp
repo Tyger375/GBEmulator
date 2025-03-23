@@ -57,6 +57,8 @@ int main() {
 
     Profiling::TimeMeasure profiling;
 
+    // TODO: fix score and lines are 9999
+
     u32 cycles = 0;
     bool running = true;
     while (running) {

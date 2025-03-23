@@ -103,6 +103,8 @@ void PPU::background_push_tile_data(Memory& mem) {
 }
 
 void PPU::background_draw(Memory& mem) {
+    if (sprites_drawing_step > 1) return;
+
     switch (drawing_step) {
         case 1: {
             background_fetch_tile_number(mem);

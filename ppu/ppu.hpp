@@ -14,7 +14,7 @@ class PPU {
 
     std::vector<VideoUtils::OAM::Sprite> sprites_buffer;
 
-    Byte x_pos_counter = 0;
+    Word x_pos_counter = 0;
 
     Word background_tile_number = 0;
     Byte tile_data_low = 0;
@@ -22,7 +22,7 @@ class PPU {
     int drawing_step = 0;
     Byte window_line_counter = 0;
 
-    Byte sprite_tile_number = 0;
+    Word sprite_tile_number = 0;
     Byte sprite_tile_data_low = 0;
     Byte sprite_tile_data_high = 0;
     int sprites_drawing_step = 0;

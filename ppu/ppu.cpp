@@ -7,12 +7,16 @@ void PPU::init() {
 
 void PPU::draw(u32 cycles, Memory& mem) {
     for (u32 i = 0; i < cycles / 2; ++i) {
+        //if (mem[LY_REG] == 0x70)
+            //std::cout << "here" << std::endl;
         background_draw(mem);
         sprites_draw(mem);
     }
 }
 
 void PPU::pop_and_mix_to_lcd(u32 cycles, LCD& lcd) {
+    if (sprites_drawing_step > 1) return;
+
     for (u32 i = 0; i < cycles; ++i) {
         if (background_fifo.is_empty()) return;
 
@@ -42,6 +46,7 @@ void PPU::update(u32 cycles, Memory& mem, LCD& lcd) {
             case 0: {
                 total_cycles += 2;
                 if (total_cycles >= 456) {
+                    sprites_buffer.clear();
                     total_cycles = 0;
                     mem[LY_REG]++;
                     if (mem[LY_REG] >= 144) {
@@ -73,9 +78,9 @@ void PPU::update(u32 cycles, Memory& mem, LCD& lcd) {
             }
             default: std::cerr << "Unknown mode" << std::endl;
         }
-    }
 
-    pop_and_mix_to_lcd(cycles, lcd);
+        pop_and_mix_to_lcd(2, lcd);
+    }
 
     Byte LY = mem[LY_REG];
     Byte LYC = mem[LYC_REG];

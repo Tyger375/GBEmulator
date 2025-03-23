@@ -16,8 +16,9 @@ namespace VideoUtils {
         static constexpr Word OAM_SIZE = 0x9F / 4;
 
         struct Sprite {
-            Byte y_pos;
-            Byte x_pos;
+            Byte id;
+            Word y_pos;
+            Word x_pos;
             Byte tile_number;
             Byte flags;
         };

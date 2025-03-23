@@ -414,6 +414,10 @@ void CPU::exec_op(u32 &cycles, Memory& mem) {
             Byte little = fetch_byte(cycles, mem);
             Byte big = fetch_byte(cycles, mem);
             Word addr = little | (big << 8);
+            if (addr == 0x2000) {
+                // Very strange tetris bug at instruction 0x0254
+                break;
+            }
             write_byte(addr, A, cycles, mem);
             break;
         }

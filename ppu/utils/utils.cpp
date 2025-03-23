@@ -37,7 +37,9 @@ Uint32 VideoUtils::color_to_rgb(const SDL_PixelFormatDetails* format, Byte color
 }
 
 VideoUtils::OAM::Sprite VideoUtils::OAM::fetch_sprite(Word index, Memory &mem)  {
+    Byte id = (index - 0xFE00) / 4;
     return {
+            id,
             mem[index],
             mem[index+1],
             mem[index+2],
