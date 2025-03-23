@@ -1,5 +1,4 @@
 #include <SDL3/SDL.h>
-#include <chrono>
 #include <iostream>
 #include <string>
 #include "memory/memory.hpp"
@@ -41,6 +40,7 @@ int main() {
         DISPLAY_WIDTH * scale, DISPLAY_HEIGHT * scale,
         SDL_WINDOW_OPENGL
         );
+
     if (!window) {
         std::cerr << "SDL_CreateWindow failed: " << SDL_GetError() << std::endl;
         SDL_Quit();
@@ -54,10 +54,22 @@ int main() {
     cpu.load_rom("tetris.gb", mem);
 
     bool rendered = false;
-
     Profiling::TimeMeasure profiling;
 
-    // TODO: fix score and lines are 9999
+    Byte* cuda_video;
+    size_t pitch = 0;
+
+    Uint32* cuda_scaled_video;
+    size_t scaled_pitch = 0;
+
+    prepare_pointers(
+            &cuda_video,
+            &pitch,
+            &cuda_scaled_video,
+            &scaled_pitch,
+            DISPLAY_WIDTH, DISPLAY_HEIGHT,
+            scale
+        );
 
     u32 cycles = 0;
     bool running = true;
@@ -90,7 +102,14 @@ int main() {
          * Hard coding some logic so that I don't lose performance for now
          **/
         if (lcd.is_ready() && !rendered) {
-            build_video(lcd.get_display(), DISPLAY_WIDTH, DISPLAY_HEIGHT, pixels, scale);
+            build_video(
+                    cuda_video,
+                    cuda_scaled_video,
+                    lcd.get_display(),
+                    pixels,
+                    DISPLAY_WIDTH, DISPLAY_HEIGHT,
+                    scale
+                );
             rendered = true;
 
             SDL_UpdateWindowSurface(window);
@@ -101,6 +120,7 @@ int main() {
     }
 
     SDL_Quit();
+    free_pointers(cuda_video, cuda_scaled_video);
 
     return 0;
 }

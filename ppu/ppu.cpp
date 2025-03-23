@@ -7,8 +7,6 @@ void PPU::init() {
 
 void PPU::draw(u32 cycles, Memory& mem) {
     for (u32 i = 0; i < cycles / 2; ++i) {
-        //if (mem[LY_REG] == 0x70)
-            //std::cout << "here" << std::endl;
         background_draw(mem);
         sprites_draw(mem);
     }

@@ -37,31 +37,55 @@ __global__ void cuda_build_video(
     scaled_video[scaled_pos] = color_to_rgb(video[pos]);
 }
 
-void build_video(Byte* video, u32 width, u32 height, Uint32* scaled_video, int scale) {
+void prepare_pointers(
+        Byte** device_video,
+        size_t* pitch,
+        Uint32** device_scaled_video,
+        size_t* scaled_pitch,
+        u32 width,
+        u32 height,
+        int scale
+        ) {
+    cudaMallocPitch((void**)device_video, pitch, width * sizeof(Byte), height);
+
     u32 new_width = width * scale;
     u32 new_height = height * scale;
 
-    Byte* cuda_video;
-    size_t pitch = 0;
-    cudaMallocPitch((void**)&cuda_video, &pitch, width * sizeof(Byte), height);
+    cudaMallocPitch((void**)device_scaled_video, scaled_pitch, new_width * sizeof(Uint32), new_height);
+}
+
+void free_pointers(Byte* video, Uint32* scaled_video) {
+    cudaFree(video);
+    cudaFree(scaled_video);
+}
+
+void build_video(
+        Byte* device_video,
+        Uint32* device_scaled_video,
+        Byte* video,
+        Uint32* scaled_video,
+        u32 width,
+        u32 height,
+        int scale
+) {
+    u32 new_width = width * scale;
+    u32 new_height = height * scale;
+
+
     cudaMemcpy(
-            cuda_video,
+            device_video,
             video,
             (width * height) * sizeof(Byte),
             cudaMemcpyHostToDevice
             );
 
-    Uint32* cuda_scaled_video;
-    size_t scaled_pitch = 0;
-    cudaMallocPitch((void**)&cuda_scaled_video, &scaled_pitch, new_width * sizeof(Uint32), new_height);
-
     dim3 video_dim(width, height);
     dim3 scale_dim(scale, scale);
-    cuda_build_video<<<video_dim, scale_dim>>>(cuda_video, cuda_scaled_video, scale);
+    cuda_build_video<<<video_dim, scale_dim>>>(device_video, device_scaled_video, scale);
 
     cudaMemcpy(
             scaled_video,
-            cuda_scaled_video,
+            device_scaled_video,
             (new_width * new_height) * sizeof(Uint32),
             cudaMemcpyDeviceToHost
     );

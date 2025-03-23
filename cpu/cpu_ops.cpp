@@ -1672,7 +1672,7 @@ void CPU::exec_op(u32 &cycles, Memory& mem) {
                     adj += 0x6;
                 if (c & 1 || A > 0x9F)
                     adj += 0x60;
-                c = ((A & 0xFF) + (adj + 0xFF)) > 0xFF;
+                c = ((A & 0xFF) + (adj & 0xFF)) > 0xFF;
                 A += adj;
                 z = A == 0;
             }
