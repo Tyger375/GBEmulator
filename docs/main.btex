@@ -1,0 +1,37 @@
+@class article\
+
+@import ./introductions/abstract\
+@import ./introductions/introduction\
+@import ./introductions/premises\
+
+@import general-structure\
+
+@import ./memory/memory\
+
+@import ./cpu/cpu\
+
+@title Emulation\
+@author Takanen Edoardo\
+
+@document {
+    @maketitle\
+
+    Hello btex!
+
+    @usecomponent Abstract\
+    @newpage\
+
+    @usecomponent Introduction\
+    @newpage\
+
+    @usecomponent Premises\
+    @newpage\
+
+    @usecomponent GeneralStructure\
+    @newpage\
+
+    @usecomponent Memory\
+    @newpage\
+
+    @usecomponent CPU\
+}

@@ -1,0 +1,19 @@
+int main() {
+    // Hardware components definition
+    Memory mem;
+    CPU cpu;
+    // ...
+
+    // Components initialization
+    mem.init();
+    cpu.init();
+    cpu.load_boot();
+    // ...
+
+    while (true) {
+        cpu.exec_op(mem); // Executing an operation
+        // emulate all the other components
+    }
+
+    return 0;
+}

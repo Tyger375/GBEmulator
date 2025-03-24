@@ -1,0 +1,15 @@
+@component Premises {
+    This emulator project is purely for understanding the concepts and the theory about how a machine like a console (or similarly a computer) is made (and also for fun).
+    There are many better-developed Gameboy emulators online, and making one that could compete with the other popular ones is nowhere near my goals.
+    Therefore, I could not achieve the level of knowledge I want to reach if I just looked at other people's codes, I want to **fully** understand the subject.
+    Obviously though I have to start somewhere, I do not have the skills to reverse-engineer a real Gameboy (although it would be an extremely interesting challenge),
+    for this reason I will only consult theory guides made by many passionate developers and hackers that already did the work of studying the Gameboy from scratch for us.
+    For a better understanding, I used two sources for this project, in order to have a dual perspective on the study.\\
+    For anyone who would like to dig into this challenge, the guides are @href https://gbdev.io/ GBDev\ and @href https://hacktix.github.io/GBEDG/ GBEDG\.
+    \\ \\
+    What this paper is not. \\
+    This paper is not and was not intended as a guide, I previously attached some real references.
+    This document is a report of my journey throught the development of the emulator, made for understanding the fundamentals of what is around us, from personal computers 
+    to smartphones. It could also be a way for readers to get passionate about this topic and an inspiration for them to make their own emulators 
+    (or even better, their own consoles!).
+}

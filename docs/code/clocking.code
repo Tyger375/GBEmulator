@@ -1,0 +1,9 @@
+while (true) {
+    // Returns how many clock cycles the instruction took
+    int cycles = cpu.exec_op();
+
+    // Updating all the other components
+    timers.update(cycles);
+    ppu.update(cycles);
+    // ...
+}

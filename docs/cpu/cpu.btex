@@ -1,0 +1,6 @@
+@component CPU {
+    The first component we likely want to implement is the Central Processing Unit (CPU).
+    This component is the most important in our circuit, and is the one that coordinates the other components, executes the program we give to it etc.
+
+    Thus, the first thing I had to implement
+}
