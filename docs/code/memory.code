@@ -1,0 +1,22 @@
+struct Memory {
+private:
+    static constexpr u32 MAX_MEM = 64 * 1024;
+    // Array of bytes to emulate all the Gameboy's addresses
+    Byte Data[MAX_MEM] = {};
+public:
+    void init();
+
+    /**
+     * Functions used for setting and accessing memory as
+     * mem[addr] = value         to set
+     * Byte value = mem[addr]    to access
+     * */
+    Byte operator[](u32 addr) const;
+    Byte& operator[](u32 addr);
+
+    /**
+     * Dumps all the memory in a file,
+     * used for debugging purposes
+     * */
+    void dump(const char* filename);
+};
