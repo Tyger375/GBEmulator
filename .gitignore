@@ -2,3 +2,5 @@
 compile.sh
 cmake-build-debug/
 .idea/
+docs/out/*
+!docs/out/out.pdf
