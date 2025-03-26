@@ -1,0 +1,28 @@
+struct CPU {
+    Byte A, B, C, D, E, H, L;
+
+    Word SP;
+    Word PC;
+
+    // flags
+    Byte z, n, h, c, IME;
+
+    Byte fetch_byte(u32& cycles, Memory& mem);
+    Word fetch_word(u32& cycles, Memory& mem);
+    Byte read_byte(Word addr, u32& cycles, Memory& mem);
+    void write_byte(Word addr, Byte data, u32& cycles, Memory& mem);
+    void write_word(Word addr, Word data, u32& cycles, Memory& mem);
+    
+    // ... Functions to execute different bit manipulations
+
+    // ... List of all instructions written as
+    // static constexpr Byte INS_[INSTRUCTION] = [OP-CODE];
+
+    // ... Functions to handle interrups (we will discuss them later)
+	
+    // Executes an instruction
+    void exec_op(u32&, Memory&);
+
+    // Gets called by the main loop
+    u32 execute(Memory& mem);
+}

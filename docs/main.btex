@@ -1,7 +1,9 @@
 @class article\
 
 @latex {
+    \usepackage{array}
     \usepackage{booktabs}
+    \usepackage[export]{adjustbox}[2011/08/13]
 }
 
 @title Emulation\
@@ -14,6 +16,14 @@
         @LARGE\ Abstract
     }
 
+    (still to be placed)
+    \\
+    images from:
+    @list {
+        @item {
+            https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
+        }
+    }
     
     @newpage\
 
@@ -110,6 +120,7 @@
         \end{table}
     }
 
+    [MOVE TO CARTRIDGE SECTION]
     Another interesting fact I found out when making this emulator is what is inside a cartridge.
     It is fascinating to know that some cartridges would not only include the ROM banks with the game code, but they could also supply their own additional SRAM (Static Random-Access Memory), as well as a battery to preserve the game saves.
     Due to limiting memory sizes, games could also have a Memory Bank Controller (MBC) to change what ROM should be pointed for memory region $4000-7FFF$.
@@ -163,15 +174,157 @@
     pointing to **High-RAM** and the **I/O registers**.
     \\
     I think custom-making their own CPU was the perfect choice for Nintendo, as it allowed them to implement changes like these to better suit their needs, save instruction bytes, and increase performace.
+    \\
+    CPUs are the main core of every computer and what they do most of the time is execute instructions defined in some memory.
+    In the next section, we will give a brief summary of the different types of instructions.
+    What is most important is to understand that the majority of these operate on internal registers and external memory.
+
+    @latex {
+        \begin{table}[H]
+        \centering
+        \begin{tabular}{ | >{\centering}p{11mm} | >{\centering}p{11mm} | c | }
+            \toprule
+            \multicolumn{2}{|c|}{8-bit registers} & 16-bit pairs \\
+            \midrule
+            A\textsuperscript{*} & F\textsuperscript{**} & AF \\
+            B & C & BC \\
+            D & E & DE \\
+            H & L & HL \\
+            \midrule
+
+            \addlinespace[1ex]
+            \multicolumn{3}{l}{\textsuperscript{*}Accumulator}
+            \multicolumn{3}{l}{\textsuperscript{**}Flags}
+        \end{tabular}
+
+        \begin{tabular}{ | c | c | }
+            \toprule
+            16-bit register & Description \\
+            \midrule
+            SP & Stack Pointer \\
+            PC & Program Counter \\
+             & \\
+             & \\
+            \midrule
+
+            \addlinespace[1ex]
+            \multicolumn{3}{l}{}
+            \multicolumn{3}{l}{}
+        \end{tabular}
+
+        \caption{Game Boy's registers}
+        \end{table}
+    }
+
+    Registers are the fastest memory to access because it is already inside the processor.
+    However their size is very limited, so we cannot have everything in them.
+    That is why the CPU has a set of instructions for loading data to and from larger memory.
 
     @subsection (label=subsec:op-tables) The op-tables\
-    The list of all instructions is usually arranged in tables, called opcode-tables.\\
-    The Game Boy has 2 op-tables.
+    The list of all instructions is usually arranged in tables, called opcode-tables, 
+    based on their identifier byte.
+    \\
+    The Game Boy has 2 op-tables which are shown in Figure @ref fig:opcode-tables\. 
+    Instructions with similar behaviors have been marked with the same color.
+    Since a single byte (one op-table) was insufficient to cover all instructions,
+    an additional table was made, which however uses 2-byte instructions, with the first one always being *0xCB* in hexadecimal, covering all bit operations.
+    \\
+    By briefly examining the different instructions, you can see that most of them perform the following operations:
+    @list {
+        @item {
+            Loading values into registers
+        }
+        @item {
+            Adding and subtracting values between registers
+        }
+        @item {
+            Reading from and writing to memory
+        }
+        @item {
+            Comparing values and manipulating individual bits in registers
+        }
+    }
+
+    Obviously other instructions also do other kinds of operations but, as I have said above, most of them operate on the CPU's registers.
 
     @figure (H) {
-        @graphic (width=1$$textwidth$$) ./images/opcodes.png\
-        @centering\
+        @subfigure (width=1$$textwidth$$, H) {
+            @graphic (scale=1.35, center) ./images/optable1.png\
+        }
+        @latex {
+            \par\bigskip
+        }
+        @subfigure (width=1$$textwidth$$, H) {
+            @graphic (scale=1.35, center) ./images/optable2.png\
+        }
         @caption Game Boy's opcode-tables\
         @label fig:opcode-tables\
     }
+
+    @newpage\
+
+    It is important to say that some operations depend of results coming from previous instructions.
+    These results are saved in the so called *flags*.
+    Each flag would be represented by a single bit, which is set to 1 when active, and all the flags are stored together inside the *F* register.
+    Later, we will see that for simplicity I chose to use a separate variable for each flag, instead of using a single *F* variable.
+    \\
+    These flags are:
+    @latex {
+        \begin{table}[H]
+        \centering
+        \begin{tabular}{ | c | c | c | }
+            \toprule
+            Bit* & Name & Description \\
+            \midrule
+            7 & zf & Zero flag \\
+            6 & n & Add/sub flag \\
+            5 & h & Half carry flag \\
+            4 & cy & Carry flag \\
+            3-0 & - & Not used \\
+            \midrule
+
+            \addlinespace[1ex]
+            \multicolumn{3}{l}{\textsuperscript{*}bit position inside the \textit{F} register}
+        \end{tabular}
+
+        \caption{DMG-CPU's flags}
+        \end{table}
+    }
+
+    @list {
+        @item {
+            **Zero flag**
+            \\
+            Set if the result of an operation is 0 \\
+            Used for conditional jumps
+        }
+        @item {
+            **Add/sub flag**
+            \\
+            1 if the previous operation was an addition, 0 if it was a subtraction \\
+            Used for DAA instructions only
+        }
+        @item {
+            **Half carry flag**
+            \\
+            Set when there is a carry between the lower 4 bits of the operands during an arithmetic operation. It indicates that the lower nibble (4 bits) has overflowed.
+        }
+        @item {
+            **Carry flag**
+            \\
+            Set when an arithmetic operation causes a carry beyond the most significant bit of a byte (either the first or the second one in 16-bit operations) in addition, or a borrow when subtracting.
+            Also set when a rotate/shift operation has shifted out a 1.
+        }
+    }
+
+    Instructions also can take different amount of clock cycles to execute.
+    (TODO)
+
+    @newpage\
+
+    @subsection (label=subsec:cpu-implementation) Implementation\
+    Thus, the first task I had to do was to implement every single instruction shown above, 
+    so that my virtual CPU would imitate the original Game Boy's processor behavior.
+    
+    @code (language=C++, label=lst:cpu-struct) ./code/cpu.code\
 }
