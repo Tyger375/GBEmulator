@@ -11,7 +11,7 @@ int main() {
     // ...
 
     while (true) {
-        cpu.exec_op(mem); // Executing an operation
+        cpu.execute(mem); // Executing an operation
         // emulate all the other components
     }
 

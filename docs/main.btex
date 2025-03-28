@@ -1,6 +1,8 @@
 @class article\
 
 @latex {
+    \usepackage{xspace}
+    \usepackage{textcomp}
     \usepackage{array}
     \usepackage{booktabs}
     \usepackage[export]{adjustbox}[2011/08/13]
@@ -15,6 +17,15 @@
     @center {
         @LARGE\ Abstract
     }
+
+    **MOVE TO CARTRIDGE SECTION**
+    \\
+    Another interesting fact I found out when making this emulator is what is inside a cartridge.
+    It is fascinating to know that some cartridges would not only include the ROM banks with the game code, but they could also supply their own additional SRAM (Static Random-Access Memory), as well as a battery to preserve the game saves.
+    Due to limiting memory sizes, games could also have a Memory Bank Controller (MBC) to change what ROM should be pointed for memory region $4000-7FFF$.
+    \\
+    Notice that all these additional components are **not** supported on my emulator, since the original Tetris DMG cartridge just had a 32 Kb ROM.
+    \\
 
     (still to be placed)
     \\
@@ -35,10 +46,12 @@
     This passion for videogames grew on me so that I got interested in the making process of them, leading to game development.
     I never asked myself one question, though, until this year, which is how are these games able to run onto this consoles? and how can people
     make emulators so that I could play on my personal computer?
-    Thus, I decided to embrace the unknown world of emulation, because I have always been fascinated by it and always took it for granted.
+    Thus, I decided to embrace the unknown world of emulation, because I have always been fascinated by it but always took it for granted.
+    \\
     Emulation is not well explained on the Internet.
     Mainly, the results you will find if you search for it are "the program pretends to be the console" or "you will be able to play old titles".
-    I was not satisfied with these responses, I wanted to know more. Thus, my emulation journey started with looking for a full definition of this process.
+    Unfortunately I was not satisfied with these responses and I wanted to know more. Thus, my emulation journey started with looking for a full definition of this process.
+    \\
     I will try to give my own definition of emulation, so that I can lay a starting point to a general knowledge that will be then deepened during the paper.
     With this being said, to "make an emulator" means to develop the software that will do exactly what the hardware of the console does, so that when plugging the game data,
     the program will know how to read and handle it. \\
@@ -46,21 +59,21 @@
     For example, if our console has 2Kb of memory, for sure we are not able to emulate it on a computer that has 2Kb or less, since we also have to consider that
     the host computer will have an operating system running (which uses some of the RAM).
     I chose to make a Game Boy emulator, because while looking for the retro consoles, it seemed the least difficult when talking about the hardware structure complexity,
-    meaning a good way to start tackling this subject.
+    meaning a good way to start tackling this topic.
     @newpage\
 
     @section (label=sec:premises) Premises\
     This emulator project is purely for understanding the concepts and the theory about how a machine like a console (or similarly a computer) is made (and also for fun).
     There are many better-developed Game Boy emulators online, and making one that could compete with the other popular ones is nowhere near my goals.
-    Therefore, I could not achieve the level of knowledge I want to reach if I just looked at other people's codes, I want to **fully** understand the subject.
+    In addition, I could not achieve the level of knowledge I want to reach if I just looked at other people's codes, I wanted to **fully** understand the subject.
     Obviously though I have to start somewhere, I do not have the skills to reverse-engineer a real Game Boy (although it would be an extremely interesting challenge),
     for this reason I will only consult theory guides made by many passionate developers and hackers that already did the work of studying the Game Boy from scratch for us.
-    For a better understanding, I used two sources for this project, in order to have a dual perspective on the study.\\
-    For anyone who would like to dig into this challenge, the guides are @href https://gbdev.io/ GBDev\$$fs$$ and @href https://hacktix.github.io/GBEDG/ GBEDG\.
-    \\ \\
-    What this paper is not. \\
+    For a better understanding, I used **two** sources for this project, in order to have a dual perspective on the study.\\
+    For anyone who would like to dig into this challenge too, the guides are @href https://gbdev.io/ GBDev\$$fs$$ and @href https://hacktix.github.io/GBEDG/ GBEDG\.
+    \\
+    **What this paper is not?** \\
     This paper is not and was not intended as a guide, I previously attached some real references.
-    This document is a report of my journey throught the development of the emulator, made for understanding the fundamentals of what is around us, from personal computers 
+    This document is a report of my journey throughtout the development of the emulator, made to understand the fundamentals of what is around us, from personal computers 
     to smartphones. It could also be a way for readers to get passionate about this topic and an inspiration for them to make their own emulators 
     (or even better, their own consoles!).
     @newpage\
@@ -77,6 +90,7 @@
     @code (language=C++, label=lst:clocking) ./code/clocking.code\ 
 
     The real hardware is driven by the clock, while my implementation will be driven by how many clock cycles an instruction took.
+    This may cause some bugs and imprecisions in the emulator (and that was my main concern), but in the end it worked just fine.
     @newpage\
 
     @section (label=sec:memory) Memory\
@@ -87,8 +101,8 @@
     Since the Game Boy did not have a flash memory, those 64Kb were all the console could access 
     (this includes all the different RAMs, the cartridge data, and the registers made to control various components).
     Internally inside the Game Boy, there is some logic that specifies what component will be activated 
-    based on the requesting address. \\
-
+    based on the requesting address, but we do not have to worry about it since we are not dealing with actual hardware this time.
+    \\
     These are the regions into which the memory is split, along with a brief description of their use.
     Notice that some areas are marked as "Prohibited", though Nintendo has not provided an explanation for this.
 
@@ -120,12 +134,7 @@
         \end{table}
     }
 
-    [MOVE TO CARTRIDGE SECTION]
-    Another interesting fact I found out when making this emulator is what is inside a cartridge.
-    It is fascinating to know that some cartridges would not only include the ROM banks with the game code, but they could also supply their own additional SRAM (Static Random-Access Memory), as well as a battery to preserve the game saves.
-    Due to limiting memory sizes, games could also have a Memory Bank Controller (MBC) to change what ROM should be pointed for memory region $4000-7FFF$.
-    \\
-    Notice that all these additional components are **not** supported on my emulator, since the original Tetris DMG cartridge just had a 32 Kb ROM.
+    Most of these regions will be discussed later, based on the components that use them.
 
     @subsection (label=subsec:choices) Choices for this project\
 
@@ -150,6 +159,9 @@
     Every component we create will have access to this structure in order to read from and write to memory 
     using the two operator[] functions. I have also added a **dump** function that writes 
     all the bytes to a binary file at the moment the function is called, for easier debugging.
+    The **init** function just initializes the array by setting all values to 0.
+    This is **not** actually done in a real Game Boy, as the memory tipically contains random values when powered on.
+    However, I decided to initialize it with all zeros to make debugging easier by allowing me to see if any memory has changed.
 
     @newpage\
 
@@ -177,7 +189,7 @@
     \\
     CPUs are the main core of every computer and what they do most of the time is execute instructions defined in some memory.
     In the next section, we will give a brief summary of the different types of instructions.
-    What is most important is to understand that the majority of these operate on internal registers and external memory.
+    But what is most important for now is to understand that the majority of these operate on internal registers and external memory.
 
     @latex {
         \begin{table}[H]
@@ -221,13 +233,13 @@
     That is why the CPU has a set of instructions for loading data to and from larger memory.
 
     @subsection (label=subsec:op-tables) The op-tables\
-    The list of all instructions is usually arranged in tables, called opcode-tables, 
+    We can arrange all the instructions in tables, called opcode-tables, 
     based on their identifier byte.
     \\
     The Game Boy has 2 op-tables which are shown in Figure @ref fig:opcode-tables\. 
     Instructions with similar behaviors have been marked with the same color.
     Since a single byte (one op-table) was insufficient to cover all instructions,
-    an additional table was made, which however uses 2-byte instructions, with the first one always being *0xCB* in hexadecimal, covering all bit operations.
+    an additional table was made, which however uses 2-byte instructions, with the first one always being *0xCB* in hexadecimal (acting as a prefix), covering all bit operations.
     \\
     By briefly examining the different instructions, you can see that most of them perform the following operations:
     @list {
@@ -327,4 +339,72 @@
     so that my virtual CPU would imitate the original Game Boy's processor behavior.
     
     @code (language=C++, label=lst:cpu-struct) ./code/cpu.code\
+
+    This is the CPU structure, as you can see I defined all the registers and flags and I also implemented some utility functions.
+    \\
+    The two functions we need to focus on now are the **execute** and the @latex { \textbf{exec\_op} } function.
+    
+    @newpage\
+
+    The **execute** function is called by the main loop and, besides executing an instruction, it also handles interrupts.
+
+    @code (language=C++, label=lst:cpu-execute) ./code/execute.code\
+
+    While the @latex { \textbf{exec\_op} } is responsible for handling the operations.
+
+    @code (language=C++, label=lst:cpu-ops) ./code/cpu-ops.code\
+
+    @newpage\
+
+    @section (label=sec:debugging) Debugging the CPU\
+    It was now time to test if my CPU worked, I decided to do so by giving the Game Boy boot program to my emulator and see how it would behave.
+
+    @subsection (label=subsec:boot) The boot ROM\
+
+    The Game Boy has a little program burned inside the CPU that gets executed when the console is powered on and, among other things, shows the  @latex {Nintendo\textregistered\xspace} logo.
+    This code is exactly **256 bytes** and is stored in the first 256 addresses 
+    (from 0000-00FF in hexadecimal).
+    \\
+    I decided to download the binary file and start disassemblying by myself and studying from scratch.
+    \\
+    (DISASSEMBLY MAYBE)
+    \\
+
+    @subsection (label=subsec:boot-analysis) Boot code analysis\
+
+    For anyone interested, I will attach my disassembly along with some comments and thoughts I jotted down while studying it.
+    \\
+    Anyways, here is what the code does:
+    @list {
+        @item {
+            Resets VRAM
+        }
+        @item {
+            Sets the audio to play the famous "ba-ding!" sound
+        }
+        @item {
+            Loads the Nintendo logo from the game cartridge into VRAM to display it on screen
+        }
+        @item {
+            Scrolls the logo
+        }
+        @item {
+            Checks if the Nintendo logo is correct by comparing it with its own version; if not, the Game Boys stops executing.
+        }
+    }
+
+    Some peculiar things are happening in this code that I have not been able to explain.
+    The Game Boys contains the entire Nintendo logo (including the registered trademark), but it only displays the R symbol on screen, while the "Nintendo" text is loaded from the game cartridge. Additionally, the logo is displayed on screen **before** it is checked for correctness.
+
+    @newpage\
+
+    @subsection (label=subsec:execution-so-far) The execution so far\
+
+    With this being said, I finally loaded the boot ROM into memory and started executing.
+
+    @code (language=C++, label=lst:rom-load) ./code/rom-load.code\
+
+    I checked whether the registers that were supposed to be modified had the correct values to verify if my CPU implementation was accurate--and it was!
+    \\
+    The only issue now is that execution stops between addresses **0x64** and **0x68**. Looking at my disassembly, I noticed that the code was looping until register **FF44** reached **0x90**. However, after examining the rest of the code, I saw that this register was never modified, meaning it must be  a read-only register managed by another component.
 }

@@ -1,6 +1,6 @@
 while (true) {
     // Returns how many clock cycles the instruction took
-    int cycles = cpu.exec_op();
+    int cycles = cpu.execute();
 
     // Updating all the other components
     timers.update(cycles);

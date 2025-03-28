@@ -1,0 +1,30 @@
+void CPU::exec_op(u32 &cycles, Memory& mem) {
+    switch (Byte ins = fetch_byte(cycles, mem)) {
+        case INS_LD_BL: {
+            B = L;
+            break;
+        }
+        case INS_LD_BHL: {
+            Word addr = L | (H << 8);
+            B = read_byte(addr, cycles, mem);
+            break;
+        }
+        case INS_LD_BA: {
+            B = A;
+            break;
+        }
+        case INS_LD_BN: {
+            B = fetch_byte(cycles, mem);
+            break;
+        }
+        case INS_ADD_AB: {
+            n = 0;
+            h = ((A & 0xF) + (B & 0xF)) > 0xF;
+            c = (u32)((A & 0xFF) + (B & 0xFF)) > 0xFF;
+            A += B;
+            z = A == 0;
+            break;
+        }
+        // Just some examples of instructions, you can see the whole implementation in cpu/cpu_ops.cpp
+    }
+}
