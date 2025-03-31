@@ -407,4 +407,95 @@
     I checked whether the registers that were supposed to be modified had the correct values to verify if my CPU implementation was accurate--and it was!
     \\
     The only issue now is that execution stops between addresses **0x64** and **0x68**. Looking at my disassembly, I noticed that the code was looping until register **FF44** reached **0x90**. However, after examining the rest of the code, I saw that this register was never modified, meaning it must be  a read-only register managed by another component.
+    This component is the PPU (Pixel Processing Unit) which handles rendering on the display. Since the PPU is rather complex and long to implement, I decided to break it down into sections and follow the order in which I implemented it.
+    \\
+    Before working on the PPU, though, I first implemented two simpler components.
+
+    @newpage\
+
+    @section (label=sec:timers) Timers\
+
+    As the name suggests, timers are in charge of measuring time and execute some code every certain time.
+    One classic application that uses timers is a game where (pseudo) randomness is involved.
+    We can get a random value every time we try to read the DIV register (the core counter) for example, because games execution follows an unpredictable order and because instructions take different amount of clock cycles to complete, the value in the DIV register will likely be at a different value each time.
+
+    @subsection (label=subsec:structure) Structure\
+
+    The timer has **four** mapped registers, two of them are for counting, while the other two are for configuring them.
+
+    @subsubsection (label=subsubsec:div) DIV\
+
+    The DIV register is mapped to address **0xFF04** and is the core of the whole system.
+    Internally, it is a 16-bit counter which is incremented every single clock cycle, although only the upper 8 bits are mapped to memory.
+    The DIV register can be read from at anytime, writing to it will reset the whole 16-bit register to 0.
+
+    @subsubsection (label=subsubsec:tima) TIMA\
+
+    TIMA is a little more complex and gives us the possibility to count at different rates.
+    It is mapped to address **0xFF05** and can be configured using the two registers TMA and TAC.
+
+    @subsubsection (label=subsubsec:tac) TAC\
+
+    This register controls the behavior of TIMA.
+
+    @latex {
+        \begin{table}[H]
+        \centering
+        \begin{tabular}{ | c | c | c | c | }
+            \toprule
+            & 7 6 5 4 3 & 2 & 1 0 \\
+            \midrule
+            TAC & & Enable & Clock select \\
+            \midrule
+        \end{tabular}
+
+        \caption{TAC flags}
+        \end{table}
+    }
+
+    Bit 2 just enables or disables TIMA's counting, while bits 1 and 0 set TIMA's incrementing frequency.
+    Notice that 1 M-Cycle is equal to 4 clock cycles.
+
+    @latex {
+        \begin{table}[H]
+        \centering
+        \begin{tabular}{ | c | c | }
+            \toprule
+            Clock select & Frequency \\
+            \midrule
+            00 & 256 M-Cycles \\
+            01 & 4 M-Cycles \\
+            10 & 16 M-Cycles \\
+            11 & 64 M-Cycles \\
+            \midrule
+        \end{tabular}
+
+        \caption{TAC flags}
+        \end{table}
+    }
+
+    @subsubsection (label=subsubsec:tma) TMA\
+
+    When TIMA overflows, it is reset to the value stored in the TMA register and an interrupt is requested (we will them see later).
+    An example of use can be the following: if TMA is set to 0xFF and the frequency set in TAC is 256 M-Cycles, some piece of code gets executed every 256 M-Cycles.
+
+    @subsubsection (label=subsubsec:timing-oddities) Timing behaviors\
+
+    When TIMA overflows, it does not get reset instantly. Instead, it contains a value of zero and waits for a duration of four clock cycles before it is updated.
+    This update can be **aborted** by writing **any** value to TIMA during these four clock cycles. In this case, TIMA keeps the value that was written and an interrupt does **not** get requested.
+    However, if TIMA is written on the **same** clock cycle on which the reload occurs, the write is ignored. While if TMA is written on the same clock cycle on which the reload occurs, TMA is updated **before** its value is loaded into TIMA.
+
+    @subsection (label=subsec:implementation) Implementation\
+
+    I decided not to implement these oddities, although I **did** implement the TIMA overflow abort.
+    \\
+    The **update** function structure is the following.
+
+    @newpage\
+
+    @code (language=C++, label=lst:timers) ./code/timers.code\
+
+    @newpage\
+
+    @section (label=sec:interrupts) Interrupts\
 }
