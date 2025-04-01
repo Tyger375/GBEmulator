@@ -436,7 +436,7 @@
 
     @subsubsection (label=subsubsec:tac) TAC\
 
-    This register controls the behavior of TIMA.
+    This register controls the behavior of TIMA and is mapped to address **0xFF07**.
 
     @latex {
         \begin{table}[H]
@@ -476,6 +476,7 @@
 
     @subsubsection (label=subsubsec:tma) TMA\
 
+    TMA is mapped to register **0xFF06**
     When TIMA overflows, it is reset to the value stored in the TMA register and an interrupt is requested (we will them see later).
     An example of use can be the following: if TMA is set to 0xFF and the frequency set in TAC is 256 M-Cycles, some piece of code gets executed every 256 M-Cycles.
 
@@ -498,4 +499,105 @@
     @newpage\
 
     @section (label=sec:interrupts) Interrupts\
+
+    An Interrupt is a signal sent to the CPU by other components, temporarily pausing the CPU's current execution to handle an urgent task. Once the task is completed, the CPU resumes what it was doing.
+    Interrupts are still present in modern processors and are used to notify the Operating System when an event occurrs. They can also be triggered by a subprogram to request OS services. For those familiar with assembly, calling an interrupt is equivalent to making a **syscall**, such as writing output to the terminal.
+
+    @subsection (label=subsec:how-they-work) How they work\
+
+    When a component wants to trigger an interrupt, it sets the CPU's interrupt pin to HIGH.
+    If the CPU acknowledges the request, the component is then allowed to place an 8-bit vector on the data bus, specifying the type of interrupt that occurred.
+    \\
+    It is important to specify that an interrupt is acknowledged **only** if the IME flag is set.
+    IME (Interrupt Master Enable) is a flag internal to the CPU, it cannot be read in any way and can only be modified by some instructions or events.
+    For example, IME is set to 0 (interrupts are disabled) while an interrupt routine is being executed, preventing new interrupts from being triggered until that routine finishes.
+    A component requests an interrupt by writing to the **IF** (Interrupt Flag) register, where each bit represents a different type of interrupt.
+    Additionally, the **IE** (Interrupt Enable) register, which is configurable by the programmer, specifies which interrupt the CPU should handle.
+    \\
+    The CPU executes the interrupt handler **only** if:
+    @list {
+        @item {
+            The corresponding bit is set in both **IF** and **IE** registers.
+        }
+        @item {
+            **IME** is set to 1 (interrupts are enabled).
+        }
+    }
+
+    @subsection (label=subsec:types-interrupts) Types of interrupts\
+
+    These are the different types of interrupts, each with a specific address where the handler execution code begins.
+
+    @subsubsection (label=subsubsec:vblank) VBlank\
+
+    This interrupt is requested every time the Game Boy enters the VBlank mode, we will see it when we will talk about the PPU.
+    It occurs around 59.7 times per second and starts at address **0x0040**.
+
+    @subsubsection (label=subsubsec:lcd) LCD STAT\
+
+    This interrupt can be configured using register **0xFF41** to choose when it should be triggered (again, we will talk about it with the PPU).
+    A STAT interrupt will be triggered only if there is a transition from LOW to HIGH on the STAT interrupt line.
+    Its handler address is **0x0048**.
+
+    @subsubsection (label=subsubsec:timer) Timer\
+
+    As described in the Timers section, this interrupt occurs every time TIMA overflows. Its handler address is **0x0050**.
+
+    @subsubsection (label=subsubsec:serial) Serial\
+
+    The serial interrupt is requested when a serial data transfer is completed.
+    Two Game Boy systems could communicate using a link cable, this thing is not implemented in the emulator, thus the interrupt is never requested.
+    Its handler address is **0x0058**.
+
+    @subsubsection (label=subsubsec:joypad) Joypad\
+
+    The Joypad interrupt is requested when any of the bits in the Joypad register changes from HIGH to LOW. As we will see later when we will talk about Joypad emulation, this happens when a button is pressed. Its handler address is **0x0060**.
+
+    @subsection (label=subsec:if-ie-regs) IF and IE registers\
+
+    The IE register is located at **0xFFFF** and controls whether an interrupt handler may be called.
+
+    @latex {
+        \begin{table}[H]
+        \centering
+        \begin{tabular}{ | c | c | c | c | c | c | c | }
+            \toprule
+            & 7 6 5 & 4 & 3 & 2 & 1 & 0 \\
+            \midrule
+            IE & & Joypad & Serial & Timer & LCD STAT & VBlank \\
+            \midrule
+        \end{tabular}
+
+        \caption{IE flags}
+        \end{table}
+    }
+
+    While the IF register is located at **0xFF0F** and controls whether an interrupt handle is being requested.
+
+    @latex {
+        \begin{table}[H]
+        \centering
+        \begin{tabular}{ | c | c | c | c | c | c | c | }
+            \toprule
+            & 7 6 5 & 4 & 3 & 2 & 1 & 0 \\
+            \midrule
+            IF & & Joypad & Serial & Timer & LCD STAT & VBlank \\
+            \midrule
+        \end{tabular}
+
+        \caption{IF flags}
+        \end{table}
+    }
+
+    In case more than one interrupt is requested at the same time, the one with the highest priority is serviced first. The priorities follow the order of the bits in the IE and IF registers, with bit 0 (VBlank) having the highest priority and bit 4 having the lowest one.
+
+    @subsection (label=subsec:interrupts-implementation) Implementation\
+
+    This is the @latex { \textbf{handle\_interrupts} } function that, as we saw before, is called by the CPU **update** function.
+
+    @code (language=C++, label=lst:interrupts) ./code/interrupts.code\
+
+    @newpage\
+
+    @section (label=sec:ppu-first) PPU - Very basic start\
 }
