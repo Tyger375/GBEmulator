@@ -600,4 +600,47 @@
     @newpage\
 
     @section (label=sec:ppu-first) PPU - Very basic start\
+
+    It was finally time to work on the PPU and ensure the boot ROM could continue executing properly.
+    
+    @subsection (label=subsec:ppu-general-introduction) General introduction\
+
+    The PPU has been mentioned many times so far because it is the second most important component inside the Game Boy--and also the most complex, even more so than the CPU.
+    \\
+    When I first began working on this component I did not aim to render anything on the screen immediately. My initial goal was merely to bypass the code segment that was blocking the boot execution, which involved a specific register.
+    However, we first need some theory and some basic knowledge to understand how the PPU works.
+
+    @subsubsection (label=subsubsec:the-screen) The screen\
+
+    The original Game Boy display was a 160x144 pixel LCD (Liquid Crystal Display), which could display up to 4 different shades of gray.
+
+    @subsubsection (label=subsubsec:tiles) Tiles\
+
+    However, pixels could not be manipulated individually. Instead, they were grouped into **tiles**--fixed **8x8 pixel textures** that could be placed on the screen within a predefined grid. This resulted in a screen that was 20x18 tiles in size.
+    \\
+    Since there were only 4 shades of gray, only 2 bits per pixel were required, making each tile **16 bytes** (2 bytes per row).
+
+    @figure (H) {
+        @graphic (width=1$$textwidth$$) images/tile-explanation\
+        @centering\
+        @caption Tile explanation\
+        @label fig:tile-explanation\
+    }
+
+    @subsubsection (label=subsubsec:display-layers) Display layers\
+
+    But where do we put these tiles?
+    The Game Boy organizes its display into three separate layers: the **Background**, the **Window** and the **Sprites**.
+
+    @paragraph The Background\
+
+    The Background is a 32x32 tile grid. Since the Game Boy can only display a 20x18 tile section, it can be scrolled using **SCX** and **SCY** registers, respectively Scroll X and Scroll Y registers.
+
+    @paragraph The Window\
+
+    The Window is another 32x32 tile grid that acts as an overlay over the Background. the position of this Window is determined using the **WX** and **WY** registers, Window X and Window Y respectively.
+
+    @paragraph The Sprites\
+
+    Sprites are the objects that move inside the screen, like the player character in a game. It can be either 1 tile or 2 tiles (8x16 pixels) and they are not limited by the Background or the Window grid.
 }
