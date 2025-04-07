@@ -619,6 +619,7 @@
     However, pixels could not be manipulated individually. Instead, they were grouped into **tiles**--fixed **8x8 pixel textures** that could be placed on the screen within a predefined grid. This resulted in a screen that was 20x18 tiles in size.
     \\
     Since there were only 4 shades of gray, only 2 bits per pixel were required, making each tile **16 bytes** (2 bytes per row).
+    These tiles were stored in VRAM from address **0x8000** to **0x97FF**
 
     @figure (H) {
         @graphic (width=1$$textwidth$$) images/tile-explanation\
@@ -629,18 +630,74 @@
 
     @subsubsection (label=subsubsec:display-layers) Display layers\
 
-    But where do we put these tiles?
+    But how do we use these tiles?
     The Game Boy organizes its display into three separate layers: the **Background**, the **Window** and the **Sprites**.
 
     @paragraph The Background\
 
-    The Background is a 32x32 tile grid. Since the Game Boy can only display a 20x18 tile section, it can be scrolled using **SCX** and **SCY** registers, respectively Scroll X and Scroll Y registers.
+    is a 32x32 tile grid. Since the Game Boy can only display a 20x18 tile section, it can be scrolled using **SCX** and **SCY** registers, respectively Scroll X and Scroll Y registers.
 
     @paragraph The Window\
 
-    The Window is another 32x32 tile grid that acts as an overlay over the Background. the position of this Window is determined using the **WX** and **WY** registers, Window X and Window Y respectively.
+    is another 32x32 tile grid that acts as an overlay over the Background. the position of this Window is determined using the **WX** and **WY** registers, Window X and Window Y respectively.
 
-    @paragraph The Sprites\
+    @paragraph Sprites\
+    are the objects that move inside the screen, like the player character in a game. It can be either 1 tile or 2 tiles (8x16 pixels) and they are not limited by the Background or the Window grid.
+    Due to memory size, there can be up to 40 sprites and up to 10 sprites per row.
 
-    Sprites are the objects that move inside the screen, like the player character in a game. It can be either 1 tile or 2 tiles (8x16 pixels) and they are not limited by the Background or the Window grid.
+    @subsubsection (label=subsubsec:tile-data) Layers in memory\
+
+    But where are all of these layers stored? \\
+    The Background and Window are stored in two **Background Maps**, located at memory ranges **0x9800-0x9BFF** and **0x9C00-0x9FFF**. Which map represents the Window and which one the Background is configured using the **LCDC register**.
+    Bytes in these maps are organized row by row, with each byte representing a tile via a **tile number**. The first byte corresponds to the top-left tile, the next one to the tile to its right, and so on.
+    \\
+    A **tile number** is merely an index pointing to a tile in the tile data region. There are **two methods** the Game Boy uses to interpret these tile numbers.
+    @list {
+        @item {
+            The **8000 method** treats the tile number as an **unsigned 8-bit integer** and uses it as an offset from the base address **0x8000**. For example, a tile number of 0 would point to the tile that starts at **0x8000**, a tile number of 1 would point to **0x8010** etc.
+        }
+        @item {
+            The **8800 method** instead treats the tile number as a **signed 8-bit integer** and offsets it from the base address **0x9000**. Hence, a tile number of 0 would point to **0x9000** while a tile number of 0xFF (-1) would point to **0x8FF0** etc.
+        }
+    }
+    The Background and the Window can be configured to use either the 8000 or 8800 method using the **LCDC register**, while the Sprites always use the 8000 one.
+    \\
+    Sprites are stored in the region usually called OAM (Object Attribute Memory). This is because each sprite does not just have to include a tile number but it also needs to supply other information.
+    This OAM section ranges from **0xFE00** to **0xFE9F**, each sprite entry is structured as follows:
+    \\
+    TODO: maybe add more details about this
+    @list {
+        @item {
+            **Byte 0 - Y-Position**
+        }
+        @item {
+            **Byte 1 - X-Position**
+        }
+        @item {
+            **Byte 2 - Tile number**
+        }
+        @item {
+            **Byte 3 - Sprite flags**
+        }
+    }
+
+    @subsection (label=subsec:the-rendering-process) The rendering process\
+
+    Now that we have a general understanding of how memory is managed by the PPU, we can start discussing the **rendering process**.
+    Keep in mind that for this initial implementation, I did not aim to **actually** create a window and render tiles.
+    Instead, I wanted to **simulate** rendering by updating the registers correctly.
+    The goal was to just **"pretend"** rendering was happening in order to bypass the infinite loop we were stuck in.
+
+    @subsubsection (label=subsubsec:how-tiles-are-rendered) How tiles are rendered\
+
+    Although the games organize graphics into tiles, the PPU does not actually set the pixels on a tile-by-tile basis. Instead, frames are rendered row by row—these rows are commonly referred to as **scanlines**.
+    The number of the scanline the PPU is currenly working on is stored in the **LY register**, mapped to address **0xFF44**--exacly the register that was being checked in our infinite loop! The boot program was waiting for the PPU to process the 90th row.
+    \\
+    Every time a scanline is processed, the PPU cycles throught different **modes**.
+    I have decided to explain them in the order they are executed during rendering, rather than by their mode identifier.
+
+    @subsubsection (label=subsubsec:oam-scan) OAM scan\
+    @subsubsection (label=subsubsec:oam-scan) Drawing\
+    @subsubsection (label=subsubsec:oam-scan) H-Blank\
+    @subsubsection (label=subsubsec:oam-scan) V-Blank\
 }

@@ -7,7 +7,7 @@ set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_ARCHITECTURES 75 86)
 cmake_policy(SET CMP0104 NEW)
 
-set(SDL3_DIR C:/SDL3-3.2.4/cmake)
+set(SDL3_DIR C:/SDL/build)
 find_package(SDL3 REQUIRED)
 include_directories(${SDL3_INCLUDE_DIRS})
 
