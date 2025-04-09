@@ -709,10 +709,10 @@
     is a more interesting mode instead.
     As mentioned earlier, the Game Boy display has 144 visible pixel rows. However, the PPU processes a total of 154 scanlines.
     The remaining 10 scanlines are part of the V-Blank period. Each of these takes 456 clock cycles--just like a regular scanline--and, similar to H-Blank, nothing really happens.
-    Notice that V-Blank is the only time when the CPU **can access VRAM**. In later implementations we will see how games use this V-Blank period.
+    Notice that V-Blank is the only time when the CPU **can safely access VRAM** (although tecnically it can also be accessed during OAM scan and H-Blank). In later implementations we will see how games use this V-Blank period for **DMA transfers** and much more.
 
     @newpage\
-    
+
     To make everything even clearer, I will include a diagram from the Game Boy Pandocs that visually illustrates the concepts explained above.
 
     @figure (H) {
