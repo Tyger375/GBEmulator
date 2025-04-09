@@ -140,7 +140,7 @@
 
     For simplicity, I decided not to break down all these areas into different regions of memory
     in the emulator, but I opted for an easier solution, which is to create an array of 65'536 bytes,
-    since the data bus was 8 bits-long, so every address will have exacly one byte of data.
+    since the data bus was 8 bits-long, so every address will have exactly one byte of data.
     \\
     There is a trade-off in choosing this approach tough.
     On one hand, it makes things simpler to manage, we can have all the memory in one place and it really helps when debugging,
@@ -696,8 +696,29 @@
     Every time a scanline is processed, the PPU cycles throught different **modes**.
     I have decided to explain them in the order they are executed during rendering, rather than by their mode identifier.
 
-    @subsubsection (label=subsubsec:oam-scan) OAM scan\
-    @subsubsection (label=subsubsec:oam-scan) Drawing\
-    @subsubsection (label=subsubsec:oam-scan) H-Blank\
-    @subsubsection (label=subsubsec:oam-scan) V-Blank\
+    @paragraph OAM scan\
+    is entered at the beginning of every scanline (except for V-Blank), the PPU looks for sprites that are on the **current scanline** and stores them in a local buffer which can contain up to 10 sprites (this is why only 10 sprites per row are allowed). A sprite check happens every 2 clock cycles for a total amount of 80 clock cycles, since there can be up to 40 sprites.
+
+    @paragraph Drawing\
+    is the mode in which the PPU actually transfers pixels to the LCD. Due to various factors, the duration of this mode is not fixed--it can take as little as 172 clock cycles, in the best case and up to 289 in the worst case.
+
+    @paragraph H-Blank\
+    acts as a kind of padding to ensure each scanline takes exactly 456 clock cycles. Nothing significant happens here as the PPU just pauses.
+
+    @paragraph V-Blank\
+    is a more interesting mode instead.
+    As mentioned earlier, the Game Boy display has 144 visible pixel rows. However, the PPU processes a total of 154 scanlines.
+    The remaining 10 scanlines are part of the V-Blank period. Each of these takes 456 clock cycles--just like a regular scanline--and, similar to H-Blank, nothing really happens.
+    Notice that V-Blank is the only time when the CPU **can access VRAM**. In later implementations we will see how games use this V-Blank period.
+
+    @newpage\
+    
+    To make everything even clearer, I will include a diagram from the Game Boy Pandocs that visually illustrates the concepts explained above.
+
+    @figure (H) {
+        @graphic images/ppu-modes.png\
+        @centering\
+        @caption PPU modes timing diagram\
+        @label fig:ppu-modes\
+    }
 }
