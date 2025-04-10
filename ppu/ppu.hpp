@@ -67,6 +67,8 @@ public:
     void draw(u32, Memory&);
     void pop_and_mix_to_lcd(u32, LCD&);
 
+    static void request_stat_interrupt(Memory&);
+
     /**
      *
      * @param cycles T-Cycles

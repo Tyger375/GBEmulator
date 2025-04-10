@@ -48,7 +48,7 @@ void CPU::handle_interrupts(Memory& mem) {
     bool lcd = is_lcd_int(IE, IF);
     if (lcd && !old_lcd_int_flag) {
         ack_int(mem, 1);
-        call_int(mem, 0x0040);
+        call_int(mem, 0x0048);
         old_lcd_int_flag = lcd;
         return;
     }

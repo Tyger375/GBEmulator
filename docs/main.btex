@@ -1,6 +1,7 @@
 @class article\
 
 @latex {
+    \usepackage{multirow}
     \usepackage{xspace}
     \usepackage{textcomp}
     \usepackage{array}
@@ -691,7 +692,7 @@
     @subsubsection (label=subsubsec:how-tiles-are-rendered) How tiles are rendered\
 
     Although the games organize graphics into tiles, the PPU does not actually set the pixels on a tile-by-tile basis. Instead, frames are rendered row by row—these rows are commonly referred to as **scanlines**.
-    The number of the scanline the PPU is currenly working on is stored in the **LY register**, mapped to address **0xFF44**--exacly the register that was being checked in our infinite loop! The boot program was waiting for the PPU to process the 90th row.
+    The number of the scanline the PPU is currently working on is stored in the **LY register**, mapped to address **0xFF44**--exacly the register that was being checked in our infinite loop! The boot program was waiting for the PPU to process the 90th row.
     \\
     Every time a scanline is processed, the PPU cycles throught different **modes**.
     I have decided to explain them in the order they are executed during rendering, rather than by their mode identifier.
@@ -721,4 +722,129 @@
         @caption PPU modes timing diagram\
         @label fig:ppu-modes\
     }
+
+    @newpage\
+
+    @subsubsection (label=subsubsec:ppu-registers) PPU registers\
+
+    Now let's take a look at the registers that allow the processor to control the PPU.
+
+    @paragraph LCD Control (LCDC)\
+    is mapped to address **0xFF40** and contains multiple flags that determine what is displayed and how everything is configured.
+
+    @latex {
+        \begin{table}[H]
+        \centering
+        \begin{tabular}{ | p{1cm} | p{4cm} | p{6cm} | }
+            \toprule
+            Bit* & Name & Description \\
+            \midrule
+
+            7 & LCD Display enable & Setting this bit to 0 \textbf{disables} the PPU and the screen entirely
+            \\[25pt]
+
+            6 & Window Tile Map Select &
+            If set to 1, the Window will use the background map located at \textbf{0x9C00-0x9FFF}; otherwise, it will use \textbf{0x9800-0x9BFF}.
+            \\[50pt]
+
+            5 & Window Display Enable & Setting this bit to 0 completely hides the Window layer
+            \\[25pt]
+
+            4 & Tile Data Select & Setting this bit to 1 will use the \textbf{8000 method}; otherwise, it will use the \textbf{8800 method}
+            \\[35pt]
+
+            3 & Background Tile Map Select & Setting this bit to 1 will use the background map located at \textbf{0x9C00-0x9FFF}; otherwise, it will use \textbf{0x9800-0x9BFF}
+            \\[45pt]
+
+            2 & Sprite Size & By setting this bit to 1, sprites will have a size of 1x2 tiles; otherwise, they will be 1x1 tiles
+            \\[35pt]
+
+            1 & Sprite Enable & Setting this bit to 0 will completely disable sprites
+            \\[25pt]
+
+            0 & Background/Window Enable & Setting this bit to 0 will completely disable the Background \textbf{and} the Window \\
+            \midrule
+
+            \addlinespace[1ex]
+            \multicolumn{3}{l}{\textsuperscript{*}bit position inside the \textit{LCDC} register}
+        \end{tabular}
+
+        \caption{LCD Control register flags}
+        \end{table}
+    }
+
+    @newpage\
+
+    @paragraph LCD Status\
+    is mapped to address **0xFF41** and provides both configuration options for the STAT interrupt (previously explained) and information about the current status of the PPU.
+
+    @latex {
+        \begin{table}[H]
+        \centering
+        \begin{tabular}{ | p{1cm} | p{4cm} | p{6cm} | }
+            \toprule
+            Bit* & Name & Description \\
+            \midrule
+
+            7 & Unused & Always 1
+            \\[15pt]
+
+            6 & LYC=LY Condition & Fires a STAT interrupt whenever LY register value is equal to LYC register value
+            \\[35pt]
+
+            5 & Mode 2 Condition & Fires a STAT interrupt whenever the PPU enters mode 0 (OAM scan)
+            \\[25pt]
+
+            4 & Mode 1 Condition & Fires a STAT interrupt whenever the PPU enters mode 1 (V-Blank)
+            \\[25pt]
+
+            3 & Mode 0 Condition & Fires a STAT interrupt whenever the PPU enters mode 0 (H-Blank)
+            \\[25pt]
+
+            2 & Coincidence Flag & This bit is set 1 if the value in LY register is equal to the value in LYC register
+            \\[25pt]
+
+            1-0 & PPU mode & indicates (in binary) which mode the PPU is currently working on \\
+            \midrule
+        \end{tabular}
+
+        \caption{LCD Status register flags}
+        \end{table}
+    }
+
+    Bits 6-3 are used to enable specific conditions under which a STAT interrupt can be requested, while bits 2-0 reflect the current status of the PPU, allowing the CPU to know what the PPU is doing.
+
+    @paragraph SCY, SCX\
+    are located at memory addresses **0xFF42** and **0xFF43**, respectively, and specify the top-left coordinates of the visible area within the Background map.
+
+    @paragraph WY, WX\
+    are located at memory addresses **0xFF4A** and **0xFF4B**, respectively, and specify the top-left coordinates of the Window map.
+
+    @newpage\
+    @paragraph BGP\
+    is mapped to address **0xFF47** and assigns gray shades to the color indices of the Background and Window tiles.
+    @latex {
+        \begin{table}[H]
+        \centering
+        \begin{tabular}{ | c | c | c | c | c | }
+        \toprule
+        & 7-6 & 5-4 & 3-2 & 1-0 \\
+        \midrule
+        Colors & \textbf{ID 3} & \textbf{ID 2} & \textbf{ID 1} & \textbf{ID 0} \\
+        \midrule
+        \end{tabular}
+        \end{table}
+    }
+    Each of the two-bit identifiers map to a color, with 0 being completely white and 3 being completely black.
+
+    @paragraph OBP0, OBP1\
+    are located at memory addresses **0xFF48** and **0xFF49**, respectively, and contains the two palette data for sprites. These registers work exactly like BGP, except for the lower two bits, which are ignored since color index 0 is always transparent for sprites.
+
+    @paragraph LY\
+    as we said earlier is the register that specifies which scanline the PPU is currently working on and is mapped to address **0xFF44**
+
+    @paragraph LYC\
+    (LY Compare), as we saw earlier, is the register used to set the \textbf{Coincidence flag} inside LCDS register and is mapped to **0xFF45**.
+
+    @subsection (label=subsec:first-ppu-implementation) First implementation\
 }

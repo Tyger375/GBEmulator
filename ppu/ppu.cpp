@@ -27,6 +27,10 @@ void PPU::pop_and_mix_to_lcd(u32 cycles, LCD& lcd) {
     }
 }
 
+void PPU::request_stat_interrupt(Memory& mem) {
+    mem[IF_REG] |= 0b10;
+}
+
 void PPU::update(u32 cycles, Memory& mem, LCD& lcd) {
     Byte LCDC = mem[LCDC_REG];
     if ((LCDC & 0x80) == 0) return;
@@ -87,4 +91,19 @@ void PPU::update(u32 cycles, Memory& mem, LCD& lcd) {
     value |= (LY == LYC) << 2;
     value |= mode & 0b11;
     mem[LCDS_REG] = value;
+
+    // Firing STAT interrupts
+    const Byte status = mem[LCDS_REG];
+    if (status & (1 << 6) && LY == LYC) {
+        request_stat_interrupt(mem);
+    }
+    if (status & (1 << 5) && mode == 2) {
+        request_stat_interrupt(mem);
+    }
+    if (status & (1 << 4) && mode == 1) {
+        request_stat_interrupt(mem);
+    }
+    if (status & (1 << 3) && mode == 0) {
+        request_stat_interrupt(mem);
+    }
 }
