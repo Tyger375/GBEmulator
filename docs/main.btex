@@ -394,7 +394,9 @@
         }
     }
 
-    Some peculiar things are happening in this code that I have not been able to explain.
+    Note that the Nintendo logo is put in the Background layer--this detail will become clearer once we get to the PPU implementation.
+    \\
+    For now, anyway, I would like to take a moment to focus on some peculiar things that are happening in this code that I have not been able to explain.
     The Game Boys contains the entire Nintendo logo (including the registered trademark), but it only displays the R symbol on screen, while the "Nintendo" text is loaded from the game cartridge. Additionally, the logo is displayed on screen **before** it is checked for correctness.
 
     @newpage\
@@ -600,7 +602,7 @@
 
     @newpage\
 
-    @section (label=sec:ppu-first) PPU - Very basic start\
+    @section (label=sec:ppu-first) PPU -- Very basic start\
 
     It was finally time to work on the PPU and ensure the boot ROM could continue executing properly.
     
@@ -687,7 +689,8 @@
     Now that we have a general understanding of how memory is managed by the PPU, we can start discussing the **rendering process**.
     Keep in mind that for this initial implementation, I did not aim to **actually** create a window and render tiles.
     Instead, I wanted to **simulate** rendering by updating the registers correctly.
-    The goal was to just **"pretend"** rendering was happening in order to bypass the infinite loop we were stuck in.
+    The goal was to just **"pretend"** rendering was happening in order to bypass the infinite loop we were stuck in. That is why what I am about to explain will not be exhaustive or complete--for now. More detailed explanations will follow later, in the same order I learned them myself.
+    By the way, this kind of approach mirros how debugging often works in practice: you implement just enough for things to move forward, then come back to refine later.
 
     @subsubsection (label=subsubsec:how-tiles-are-rendered) How tiles are rendered\
 
@@ -847,4 +850,26 @@
     (LY Compare), as we saw earlier, is the register used to set the \textbf{Coincidence flag} inside LCDS register and is mapped to **0xFF45**.
 
     @subsection (label=subsec:first-ppu-implementation) First implementation\
+
+    To begin, we will define the structure of our PPU class.
+
+    @code (language=C++, label=lst:ppu) code/ppu.code\
+
+    As the **init** function just initializes some variables, the only important function for now is **update**.
+
+    @newpage\
+
+    @code (language=C++, label=lst:ppu-first-update) code/ppu-update.code\
+
+    As you can see, at lines 28 and 44, we are finally incrementing LY.
+
+    @section (label=sec:execution-so-far-2) The execution so far\
+
+    Running the boot program at this stage successfully executes the Nintendo logo scrolling section. However, it gets stuck in another infinite loop--this time during the logo check. Since we have not yet emulated the game cartridge, the comparison cannot succeed. Though, we still managed to make meaningful progress.
+    That said, there is no time to celebrate just yet--there is still plenty of work ahead.
+    Finally, after putting it off for quite some time, it is finally time to implement the screen and begin rendering at least the Background layer.
+
+    @section (label=sec:ppu-second) PPU -- Further progress\
+
+    
 }

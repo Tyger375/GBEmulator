@@ -1,0 +1,16 @@
+class PPU {
+    int mode = 0;
+    u32 total_cycles = 0;
+
+    // Registers addresses
+    static constexpr Word IF_REG = 0xFF0F;
+    // ...
+public:
+    void init();
+    static void request_stat_interrupt(Memory&);
+
+    // We will just update stuff for now
+    void update(u32, Memory&);
+
+    int get_mode() const { return mode; }
+};
