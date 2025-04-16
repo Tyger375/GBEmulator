@@ -10,6 +10,7 @@
 }
 
 @title Emulation\
+@date\
 @author Takanen Edoardo\
 
 @document {
@@ -697,7 +698,7 @@
     Although the games organize graphics into tiles, the PPU does not actually set the pixels on a tile-by-tile basis. Instead, frames are rendered row by row—these rows are commonly referred to as **scanlines**.
     The number of the scanline the PPU is currently working on is stored in the **LY register**, mapped to address **0xFF44**--exacly the register that was being checked in our infinite loop! The boot program was waiting for the PPU to process the 90th row.
     \\
-    Every time a scanline is processed, the PPU cycles throught different **modes**.
+    Every time a scanline is processed, the PPU cycles through different **modes**.
     I have decided to explain them in the order they are executed during rendering, rather than by their mode identifier.
 
     @paragraph OAM scan\
@@ -867,9 +868,35 @@
 
     Running the boot program at this stage successfully executes the Nintendo logo scrolling section. However, it gets stuck in another infinite loop--this time during the logo check. Since we have not yet emulated the game cartridge, the comparison cannot succeed. Though, we still managed to make meaningful progress.
     That said, there is no time to celebrate just yet--there is still plenty of work ahead.
-    Finally, after putting it off for quite some time, it is finally time to implement the screen and begin rendering at least the Background layer.
 
     @section (label=sec:ppu-second) PPU -- Further progress\
+
+    Finally, after putting it off for quite some time, it is finally time to implement the screen and begin rendering at least the Background layer.
+    To do so, we first need to understand how the PPU pushes the pixels into the screen.
+
+    @subsection (label=subsec:ppu-fifos) The Pixel FIFO\
+
+    We have already established that the PPU constructs each frame on a scanline basis. The final piece to understand is how these pixels are transferred to the LCD.
+    We will see in @ref subsec:fetching-background\ $$fs$$ that during the **drawing phase** tiles are collected singularly, and for each of them the PPU transitions through different phases. At the core of this process, though, are two queues that temporarily store the pixel data before it is sent to the screen.
+    I am talking about the **Pixel FIFOs**, FIFO stands for First In First Out, meaning that the first pixel to be pushed into this queue is the first that gets popped out to be rendered.
+    We will see that this method of rendering is not ideal, since it implies a lot of timings restrictions that must be followed, slowing down the rendering process. Although the hardware limitations of that time could not offer an alternative solution.
+    \\
+    There are two pixel FIFOs, one for the Background (or Window) layer, and one for Sprites. Each FIFO can hold up to 16 pixels (2 tile rows) which are only popped out under specific conditions.
+    \\
+    Each pixel data chunk keeps track of:
+    @list {
+        @item {
+            Color number
+        }
+        @item {
+            Palette (whether OBP0 or OBP1)
+        }
+        @item {
+            Background priority (only relevant for sprites)
+        }
+    }
+
+    @subsection (label=subsec:fetching-background) Fetching the Background\
 
     
 }
