@@ -1,0 +1,48 @@
+void PPU::update(u32 cycles, Memory& mem, LCD& lcd) {
+    for (u32 i = 0; i < cycles / 2; ++i) {
+        switch (mode) {
+            case 2: {
+                oam_scan(2, mem);
+                break;
+            }
+            case 3: {
+                draw(2, mem);
+                break;
+            }
+            case 0: { // Simulating H-Blank
+                total_cycles += 2;
+                if (total_cycles >= 456) {
+                    sprites_buffer.clear();
+                    total_cycles = 0;
+                    mem[LY_REG]++;
+                    if (mem[LY_REG] >= 144) {
+                        mode = 1; // Entering VBlank
+                        mem[IF_REG] |= 1; // Calling interrupt
+                    } else {
+                        mode = 2;
+                    }
+                    break;
+                }
+                break;
+            }
+            case 1: { //Simulating V-Blank
+                total_cycles += 2;
+                if (total_cycles >= 456) {
+                    total_cycles = 0;
+                    mem[LY_REG]++;
+                    if (mem[LY_REG] >= 154) {
+                        mem[LY_REG] = 0;
+                        lcd.reset();
+                        mode = 2;
+                        x_pos_counter = 0;
+                        background_fifo.empty();
+                        frames_count++;
+                    }
+                }
+                break;
+            }
+        }
+        // Mixing 2 pixels every 2 clock cycles
+        pop_and_mix_to_lcd(2, lcd);
+    }
+}

@@ -898,5 +898,60 @@
 
     @subsection (label=subsec:fetching-background) Fetching the Background\
 
-    
+    The process of fetching pixels is divided into 4 steps, each one taking 2 clock cycles.
+
+    @list {
+        @item {
+            During this first step, the **Pixel Fetcher** fetches and stores the tile number of the corresponding tile to be used, following the configurations in the LCDC register.
+        }
+        @item {
+            Using the tile number provided, the first byte of tile data is now fetched and stored internally.
+        }
+        @item {
+            The second byte of tile data is fetched in this third step.
+        }
+        @item {
+            At this stage, the Pixel Fetcher finally attempts to push the decoded pixels into the LCD.
+            However, this action is only carried out if the **Background FIFO** is **entirely empty**. If not, the operation is deferred and retried each clock cycle until the FIFO is cleared.
+        }
+    }
+
+    Here we encounter the first example of those timing restrictions I mentioned earlier. The final step requires the FIFO to be completely empty. If the FIFO happens to be full at this point, it would take **8 clock cycles** (see @ref subsec:pushing-pixels\) to clear it, whereas only 6 clock cycles were needed to reach this stage. Meaning this step must be retried at least twice before it can successfully complete.
+
+    @subsection (label=subsec:pushing-pixels) Pushing Pixels\
+
+    During **each clock cycle**, the PPU attempts to push a pixel to the LCD.
+    This can only proceed if **there are elements** present in the **Background FIFO**.
+    Merging pixels involves combining one from the Background FIFO with another from the Sprite FIFO--if available. However, for this initial implementation, only pixels from the Background are processed.
+
+    @newpage\
+
+    @subsection (label=subsec:ppu-implementation-2) Second implementation\
+
+    Let's now take a look at how I chose to implement everything discussed so far.
+
+    @subsubsection (label=subsubsec:ppu-update-2) The update method\
+
+    In addition to what was happening before in the **update** method, we are now switching through **real modes** that actually do something.
+
+    @code (language=C++, label=lst:ppu-implementation-2) code/ppu-stages-1.code\
+
+    @subsubsection (label=subsubsec:ppu-draw-method) Draw and push methods\
+
+    @code (language=C++, label=lst:ppu-draw) code/ppu-draw.code\
+
+    @newpage\
+
+    @subsubsection (label=subsubsec:ppu-lcd-implementation) The LCD class\
+
+    I still have not clearified what the **LCD class**--used throughtout these methods--actually does.
+    Following the structure of the real Game Boy, I wanted to separate the LCD from the PPU. As a result, the LCD has its own class, although it is quite simple and straightforward.
+
+    @code (language=C++, label=lst:lcd) code/lcd.code\
+
+    As we can see here, we merely keep a **byte array** of pixels, each storing the color of a pixels, ready to be rendered on our emulated window.
+
+    @newpage\
+
+    @section (label=sec:virtual-window) Creating a Virtual Window\
 }
