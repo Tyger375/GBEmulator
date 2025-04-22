@@ -34,7 +34,7 @@ int main() {
         return 1;
     }
 
-    int scale = 5;
+    int scale = 10;
     SDL_Window* window = SDL_CreateWindow(
         "GBEmulator",
         DISPLAY_WIDTH * scale, DISPLAY_HEIGHT * scale,

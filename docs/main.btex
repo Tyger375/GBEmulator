@@ -44,7 +44,7 @@
     @newpage\
 
     @section (label=sec:introduction) Introduction\
-    As a kid, I used to play with some @latex { Nintendo\textsuperscript{\textcopyright} } consoles like the Wii or the DS and I've always been keen about the games they make.
+    As a kid, I used to play with some @latex { Nintendo\textsuperscript{\textcopyright} } consoles like the Wii or the DS and I have always been keen about the games they make.
     This passion for videogames grew on me so that I got interested in the making process of them, leading to game development.
     I never asked myself one question, though, until this year, which is how are these games able to run onto this consoles? and how can people
     make emulators so that I could play on my personal computer?
@@ -132,7 +132,7 @@
             \addlinespace[1ex]
             \multicolumn{3}{l}{\textsuperscript{*}switchable}
         \end{tabular}
-        \caption{Game Boy's memory mapping}
+        \caption{Game Boy memory mapping}
         \end{table}
     }
 
@@ -174,12 +174,12 @@
     
     @subsection (label=subsec:architecture-considerations) Architecture and considerations\
 
-    The Game Boy's CPU is a custom-made by Sharp Corporation (which had a close relationship with Nintendo at that time),
+    The Game Boy CPU is a custom-made by Sharp Corporation (which had a close relationship with Nintendo at that time),
     it is often referred to as **DMG-CPU** or **Sharp SM83** and runs at around 4.19 MHz.
     When making the processor a lot of inspiration was taken from the Zilog 80 and the Intel 8080.
     Personally, I recently had the possibility to work with a real Z80, and over the past few months, 
     I have gained hands-on experience with its architecture.
-    Specifically, when studying the Zilog, I noticed some differences and similarities with the Game Boy's processor.
+    Specifically, when studying the Zilog, I noticed some differences and similarities with the Game Boy processor.
     \\
     For example, the Nintendo processor lacks the IX and IY registers, which in the Zilog were used to set a base address that could be offset with the 
     $LD (IX + d), r$ and $LD (IY + d), r$ to save instruction bytes.
@@ -226,7 +226,7 @@
             \multicolumn{3}{l}{}
         \end{tabular}
 
-        \caption{Game Boy's registers}
+        \caption{Game Boy registers}
         \end{table}
     }
 
@@ -259,7 +259,7 @@
         }
     }
 
-    Obviously other instructions also do other kinds of operations but, as I have said above, most of them operate on the CPU's registers.
+    Obviously other instructions also do other kinds of operations but, as I have said above, most of them operate on the CPU registers.
 
     @figure (H) {
         @subfigure (width=1$$textwidth$$, H) {
@@ -271,7 +271,7 @@
         @subfigure (width=1$$textwidth$$, H) {
             @graphic (scale=1.35, center) ./images/optable2.png\
         }
-        @caption Game Boy's opcode-tables\
+        @caption Game Boy opcode-tables\
         @label fig:opcode-tables\
     }
 
@@ -301,7 +301,7 @@
             \multicolumn{3}{l}{\textsuperscript{*}bit position inside the \textit{F} register}
         \end{tabular}
 
-        \caption{DMG-CPU's flags}
+        \caption{DMG-CPU flags}
         \end{table}
     }
 
@@ -338,7 +338,7 @@
 
     @subsection (label=subsec:cpu-implementation) Implementation\
     Thus, the first task I had to do was to implement every single instruction shown above, 
-    so that my virtual CPU would imitate the original Game Boy's processor behavior.
+    so that my virtual CPU would imitate the original Game Boy processor behavior.
     
     @code (language=C++, label=lst:cpu-struct) ./code/cpu.code\
 
@@ -504,12 +504,12 @@
 
     @section (label=sec:interrupts) Interrupts\
 
-    An Interrupt is a signal sent to the CPU by other components, temporarily pausing the CPU's current execution to handle an urgent task. Once the task is completed, the CPU resumes what it was doing.
+    An Interrupt is a signal sent to the CPU by other components, temporarily pausing the CPU current execution to handle an urgent task. Once the task is completed, the CPU resumes what it was doing.
     Interrupts are still present in modern processors and are used to notify the Operating System when an event occurrs. They can also be triggered by a subprogram to request OS services. For those familiar with assembly, calling an interrupt is equivalent to making a **syscall**, such as writing output to the terminal.
 
     @subsection (label=subsec:how-they-work) How they work\
 
-    When a component wants to trigger an interrupt, it sets the CPU's interrupt pin to HIGH.
+    When a component wants to trigger an interrupt, it sets the CPU interrupt pin to HIGH.
     If the CPU acknowledges the request, the component is then allowed to place an 8-bit vector on the data bus, specifying the type of interrupt that occurred.
     \\
     It is important to specify that an interrupt is acknowledged **only** if the IME flag is set.
@@ -972,4 +972,74 @@
     Then, in the while loop, we update the window surface when V-Blank mode is entered.
 
     @code (language=C++, label=lst:cpu-window-implementation) code/cpu-window.code\
+
+    And, as you can see in @ref fig:first-window\, we got our first window.
+
+    @figure (H) {
+        @graphic images/first-window.png\
+        @centering\
+        @caption First window\
+        @label fig:first-window\
+    }
+
+    Problematically though, our window (the Game Boy display) is too small for modern displays.
+    On my 1920x1080 display, it was barely even visible. There is no doubt we need to implement a way to **scale** the window up.
+
+    @subsection (label=subsec:hardware-accelerated-window) GPU-accelerated window\
+
+    This kind of task sounds like the perfect job for the GPU, though. So, I started working on a fully GPU-based implementation using the **CUDA library**.
+    This library is made by NVIDIA and provides an API that lets us write **kernels**, which will be executed in parallel on the GPU.
+    Of course, CUDA can only compile for NVIDIA graphics card.
+    Luckily, I had already gained some experience with it during my last Physics Simulation project.
+    \\
+    Below, I will attach the **final CUDA code**, divided into different sections based on their purpose, along with a brief description of their use.\\
+
+    @code (language=C++, label=lst:cuda-init) code/cuda-init.code\
+
+    When setting up the structures for the emulator, we also prepare the CUDA pointers for arrays that reside on the graphics card.
+    Specifically, we allocate memory for @latex { \textbf{device\_video} } --which will receive a copy of the byte array from the LCD class--and for @latex { \textbf{device\_scaled\_video} } --which will eventually be copied into the Uint32 SDL pixel array.
+
+    @newpage\
+
+    @code (language=C++, label=lst:cuda-kernel) code/cuda-kernel.code\
+
+    Of course, these pointers can only be accessed by the GPU. We will create a kernel to manipulate them that is executed $(width $$dot$$ height) $$dot$$ scale^2$ times in parallel.\\
+    If you are not familiar with how CUDA works, a kernel is launched by the @latex { \textbf{build\_video} } method.
+    Before launching the kernel, we copy the video buffer to the GPU using **cudaMemcpy**, specifying that the copy direction is from host to device with the **cudaMemcpyHostToDevice** flag.
+    The kernel @latex { \textbf{cuda\_build\_video} } is then launched with @latex { $width \times height$ } blocks and @latex { $scale \times scale$ } threads. Each block ID determines the original pixel position in the **video** buffer, while each thread ID determines the scaled position for that pixel. This way, each pixel from the original buffer is expanded into a $scale^2$ region in the output.
+    
+    \\A small example is shown in Figure @ref fig:scale-explanation\, illustrating a scale factor of 2.
+
+    @figure (H) {
+        @graphic (width=1$$textwidth$$) images/scale-explanation.png\
+        @centering\
+        @caption Scale explanation\
+        @latex {
+            \smallskip
+            \small
+            \textit{white pixels are shaded gray for visibility}
+        }
+        @label fig:scale-explanation\
+    }
+
+    Finally, the final buffer @latex { \textbf{device\_scaled\_video} } is copied directly into SDL's pixel buffer, which is done by specifying that the copy direction is from device to host using the **cudaMemcpyDeviceToHost** flag.
+
+    @newpage\
+
+    @code (language=C++, label=lst:cuda-colors) code/cuda-colors.code\
+
+    The last thing we have to discuss is the @latex { \textbf{color\_to\_rgb} } method, which this time returns the original 4 shades of gray, with the help of the **mapRGB** method, which just packs the values **r**, **g** and **b** into a 32 bits value.
+    \\
+    And now, the window appears as shown below with a **scale factor of 10**.
+
+    @figure (H) {
+        @graphic (width=0.6$$textwidth$$) images/scaled-window.png\
+        @centering\
+        @caption Scaled window\
+        @label fig:scaled-window\
+    }
+
+    It goes without saying that this GPU-based approach is significantly more efficient than the earlier CPU-only implementation.
+
+    @section (label=sec:emulating-cartridge) Emulating the game cartridge\
 }

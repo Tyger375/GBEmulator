@@ -1,0 +1,21 @@
+void prepare_pointers(
+        Byte** device_video,
+        size_t* pitch,
+        Uint32** device_scaled_video,
+        size_t* scaled_pitch,
+        u32 width,
+        u32 height,
+        int scale
+        ) {
+    cudaMallocPitch((void**)device_video, pitch, width * sizeof(Byte), height);
+
+    u32 new_width = width * scale;
+    u32 new_height = height * scale;
+
+    cudaMallocPitch((void**)device_scaled_video, scaled_pitch, new_width * sizeof(Uint32), new_height);
+}
+
+void free_pointers(Byte* video, Uint32* scaled_video) {
+    cudaFree(video);
+    cudaFree(scaled_video);
+}
