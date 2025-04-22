@@ -1,0 +1,18 @@
+if (lcd.is_ready() && !lcd.is_full_empty() && !rendered) {
+    // Accessing the array
+    auto pixels = static_cast<Uint32*>(surface->pixels);
+
+    for (int y = 0; y < 144; ++y) {
+        for (int x = 0; x < 160; ++x) {
+            Byte b = lcd.get(x, y);
+            // Either setting a red or a black color for now
+            Uint32 color = SDL_MapRGB(format, palette, b > 0 ? 255 : 0, 0, 0);
+            pixels[y * surface->w + x] = color;
+        }
+    }
+    rendered = true;
+
+    SDL_UpdateWindowSurface(window);
+} else if (!lcd.is_ready()) {
+    rendered = false;
+}

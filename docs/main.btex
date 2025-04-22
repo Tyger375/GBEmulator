@@ -44,7 +44,7 @@
     @newpage\
 
     @section (label=sec:introduction) Introduction\
-    As a kid, I used to play with some Nintendo (copyright symbol) consoles like the Wii or the DS and I've always been keen about the games they make.
+    As a kid, I used to play with some @latex { Nintendo\textsuperscript{\textcopyright} } consoles like the Wii or the DS and I've always been keen about the games they make.
     This passion for videogames grew on me so that I got interested in the making process of them, leading to game development.
     I never asked myself one question, though, until this year, which is how are these games able to run onto this consoles? and how can people
     make emulators so that I could play on my personal computer?
@@ -954,4 +954,22 @@
     @newpage\
 
     @section (label=sec:virtual-window) Creating a Virtual Window\
+
+    The next step we need to take is displaying these pixels in a window, which will require a graphics library.
+    What I considered at first was using **plain OpenGL**, which would have been a good excuse to finally learn how to use it. However, OpenGL is built around rendering using **vertices and polygons**. What I thought would be a better approach is to edit individual pixels instead, as we are currently doing with the LCD byte array.
+    I found out that **SDL** makes this possible, thanks to a low-level API that gives us direct access to the pixel array that will be rendered on screen. For this project, I am using the latest SDL version at the time I am writing this paper, which is **SDL 3.2.10**.
+
+    @subsection (label=subsec:cpu-window-implementation) CPU Window implementation\
+
+    At first, I just needed to check if the copyright symbol was showing up correctly and progressively scrolling from the top to the center of the screen. Thus, for now, a very inefficient, non-hardware-accelerated implementation was good enough.
+
+    @code (language=C++, label=lst:sdl-initialization) code/sdl-init.code\
+
+    At the very start of the **main** method we initialize SDL and create a 160x144 window.
+
+    @newpage\
+
+    Then, in the while loop, we update the window surface when V-Blank mode is entered.
+
+    @code (language=C++, label=lst:cpu-window-implementation) code/cpu-window.code\
 }
