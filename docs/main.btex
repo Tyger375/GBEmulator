@@ -20,15 +20,6 @@
         @LARGE\ Abstract
     }
 
-    **MOVE TO CARTRIDGE SECTION**
-    \\
-    Another interesting fact I found out when making this emulator is what is inside a cartridge.
-    It is fascinating to know that some cartridges would not only include the ROM banks with the game code, but they could also supply their own additional SRAM (Static Random-Access Memory), as well as a battery to preserve the game saves.
-    Due to limiting memory sizes, games could also have a Memory Bank Controller (MBC) to change what ROM should be pointed for memory region $4000-7FFF$.
-    \\
-    Notice that all these additional components are **not** supported on my emulator, since the original Tetris DMG cartridge just had a 32 Kb ROM.
-    \\
-
     (still to be placed)
     \\
     images from:
@@ -98,7 +89,7 @@
     @section (label=sec:memory) Memory\
     Before looking at the main components that shape the Game Boy hardware, I would like to focus on how memory is subdivided inside the console.\\
 
-    @subsection (label=subsec:memory-mapping) Memory mapping\
+    @subsection (label=subsec:memory-mapping) Memory Mapping\
     The address bus had 16 bits, meaning there could be 65'536 unique addresses (64Kb). \\
     Since the Game Boy did not have a flash memory, those 64Kb were all the console could access 
     (this includes all the different RAMs, the cartridge data, and the registers made to control various components).
@@ -138,7 +129,7 @@
 
     Most of these regions will be discussed later, based on the components that use them.
 
-    @subsection (label=subsec:choices) Choices for this project\
+    @subsection (label=subsec:choices) Choices for This Project\
 
     For simplicity, I decided not to break down all these areas into different regions of memory
     in the emulator, but I opted for an easier solution, which is to create an array of 65'536 bytes,
@@ -172,7 +163,7 @@
     This component is the most important in our circuit, and is the one that coordinates the other components, executes the program we give to it etc.
     Thus, the first thing I had to implement were all the instructions that the processor could run.
     
-    @subsection (label=subsec:architecture-considerations) Architecture and considerations\
+    @subsection (label=subsec:architecture-considerations) Architecture and Considerations\
 
     The Game Boy CPU is a custom-made by Sharp Corporation (which had a close relationship with Nintendo at that time),
     it is often referred to as **DMG-CPU** or **Sharp SM83** and runs at around 4.19 MHz.
@@ -234,7 +225,7 @@
     However their size is very limited, so we cannot have everything in them.
     That is why the CPU has a set of instructions for loading data to and from larger memory.
 
-    @subsection (label=subsec:op-tables) The op-tables\
+    @subsection (label=subsec:op-tables) The Op-Tables\
     We can arrange all the instructions in tables, called opcode-tables, 
     based on their identifier byte.
     \\
@@ -361,7 +352,7 @@
     @section (label=sec:debugging) Debugging the CPU\
     It was now time to test if my CPU worked, I decided to do so by giving the Game Boy boot program to my emulator and see how it would behave.
 
-    @subsection (label=subsec:boot) The boot ROM\
+    @subsection (label=subsec:boot) The Boot ROM\
 
     The Game Boy has a little program burned inside the CPU that gets executed when the console is powered on and, among other things, shows the  @latex {Nintendo\textregistered\xspace} logo.
     This code is exactly **256 bytes** and is stored in the first 256 addresses 
@@ -372,7 +363,7 @@
     (DISASSEMBLY MAYBE)
     \\
 
-    @subsection (label=subsec:boot-analysis) Boot code analysis\
+    @subsection (label=subsec:boot-analysis) Boot Code Analysis\
 
     For anyone interested, I will attach my disassembly along with some comments and thoughts I jotted down while studying it.
     \\
@@ -402,7 +393,7 @@
 
     @newpage\
 
-    @subsection (label=subsec:execution-so-far) The execution so far\
+    @subsection (label=subsec:execution-so-far) The Execution So Far\
 
     With this being said, I finally loaded the boot ROM into memory and started executing.
 
@@ -484,7 +475,7 @@
     When TIMA overflows, it is reset to the value stored in the TMA register and an interrupt is requested (we will them see later).
     An example of use can be the following: if TMA is set to 0xFF and the frequency set in TAC is 256 M-Cycles, some piece of code gets executed every 256 M-Cycles.
 
-    @subsubsection (label=subsubsec:timing-oddities) Timing behaviors\
+    @subsubsection (label=subsubsec:timing-oddities) Timing Behaviors\
 
     When TIMA overflows, it does not get reset instantly. Instead, it contains a value of zero and waits for a duration of four clock cycles before it is updated.
     This update can be **aborted** by writing **any** value to TIMA during these four clock cycles. In this case, TIMA keeps the value that was written and an interrupt does **not** get requested.
@@ -507,7 +498,7 @@
     An Interrupt is a signal sent to the CPU by other components, temporarily pausing the CPU current execution to handle an urgent task. Once the task is completed, the CPU resumes what it was doing.
     Interrupts are still present in modern processors and are used to notify the Operating System when an event occurrs. They can also be triggered by a subprogram to request OS services. For those familiar with assembly, calling an interrupt is equivalent to making a **syscall**, such as writing output to the terminal.
 
-    @subsection (label=subsec:how-they-work) How they work\
+    @subsection (label=subsec:how-they-work) How They Work\
 
     When a component wants to trigger an interrupt, it sets the CPU interrupt pin to HIGH.
     If the CPU acknowledges the request, the component is then allowed to place an 8-bit vector on the data bus, specifying the type of interrupt that occurred.
@@ -528,7 +519,7 @@
         }
     }
 
-    @subsection (label=subsec:types-interrupts) Types of interrupts\
+    @subsection (label=subsec:types-interrupts) Types of Interrupts\
 
     These are the different types of interrupts, each with a specific address where the handler execution code begins.
 
@@ -557,7 +548,7 @@
 
     The Joypad interrupt is requested when any of the bits in the Joypad register changes from HIGH to LOW. As we will see later when we will talk about Joypad emulation, this happens when a button is pressed. Its handler address is **0x0060**.
 
-    @subsection (label=subsec:if-ie-regs) IF and IE registers\
+    @subsection (label=subsec:if-ie-regs) IF and IE Registers\
 
     The IE register is located at **0xFFFF** and controls whether an interrupt handler may be called.
 
@@ -603,18 +594,18 @@
 
     @newpage\
 
-    @section (label=sec:ppu-first) PPU -- Very basic start\
+    @section (label=sec:ppu-first) PPU -- Very Basic Start\
 
     It was finally time to work on the PPU and ensure the boot ROM could continue executing properly.
     
-    @subsection (label=subsec:ppu-general-introduction) General introduction\
+    @subsection (label=subsec:ppu-general-introduction) General Introduction\
 
     The PPU has been mentioned many times so far because it is the second most important component inside the Game Boy--and also the most complex, even more so than the CPU.
     \\
     When I first began working on this component I did not aim to render anything on the screen immediately. My initial goal was merely to bypass the code segment that was blocking the boot execution, which involved a specific register.
     However, we first need some theory and some basic knowledge to understand how the PPU works.
 
-    @subsubsection (label=subsubsec:the-screen) The screen\
+    @subsubsection (label=subsubsec:the-screen) The Screen\
 
     The original Game Boy display was a 160x144 pixel LCD (Liquid Crystal Display), which could display up to 4 different shades of gray.
 
@@ -632,7 +623,7 @@
         @label fig:tile-explanation\
     }
 
-    @subsubsection (label=subsubsec:display-layers) Display layers\
+    @subsubsection (label=subsubsec:display-layers) Display Layers\
 
     But how do we use these tiles?
     The Game Boy organizes its display into three separate layers: the **Background**, the **Window** and the **Sprites**.
@@ -649,7 +640,7 @@
     are the objects that move inside the screen, like the player character in a game. It can be either 1 tile or 2 tiles (8x16 pixels) and they are not limited by the Background or the Window grid.
     Due to memory size, there can be up to 40 sprites and up to 10 sprites per row.
 
-    @subsubsection (label=subsubsec:tile-data) Layers in memory\
+    @subsubsection (label=subsubsec:tile-data) Layers in Memory\
 
     But where are all of these layers stored? \\
     The Background and Window are stored in two **Background Maps**, located at memory ranges **0x9800-0x9BFF** and **0x9C00-0x9FFF**. Which map represents the Window and which one the Background is configured using the **LCDC register**.
@@ -685,7 +676,7 @@
         }
     }
 
-    @subsection (label=subsec:the-rendering-process) The rendering process\
+    @subsection (label=subsec:the-rendering-process) The Rendering Process\
 
     Now that we have a general understanding of how memory is managed by the PPU, we can start discussing the **rendering process**.
     Keep in mind that for this initial implementation, I did not aim to **actually** create a window and render tiles.
@@ -693,15 +684,15 @@
     The goal was to just **"pretend"** rendering was happening in order to bypass the infinite loop we were stuck in. That is why what I am about to explain will not be exhaustive or complete--for now. More detailed explanations will follow later, in the same order I learned them myself.
     By the way, this kind of approach mirros how debugging often works in practice: you implement just enough for things to move forward, then come back to refine later.
 
-    @subsubsection (label=subsubsec:how-tiles-are-rendered) How tiles are rendered\
+    @subsubsection (label=subsubsec:how-tiles-are-rendered) How Tiles Are Rendered\
 
     Although the games organize graphics into tiles, the PPU does not actually set the pixels on a tile-by-tile basis. Instead, frames are rendered row by row—these rows are commonly referred to as **scanlines**.
-    The number of the scanline the PPU is currently working on is stored in the **LY register**, mapped to address **0xFF44**--exacly the register that was being checked in our infinite loop! The boot program was waiting for the PPU to process the 90th row.
+    The number of the scanline the PPU is currently working on is stored in the **LY register**, mapped to address **0xFF44**--exactly the register that was being checked in our infinite loop! The boot program was waiting for the PPU to process the 90th row.
     \\
     Every time a scanline is processed, the PPU cycles through different **modes**.
     I have decided to explain them in the order they are executed during rendering, rather than by their mode identifier.
 
-    @paragraph OAM scan\
+    @paragraph OAM Scan\
     is entered at the beginning of every scanline (except for V-Blank), the PPU looks for sprites that are on the **current scanline** and stores them in a local buffer which can contain up to 10 sprites (this is why only 10 sprites per row are allowed). A sprite check happens every 2 clock cycles for a total amount of 80 clock cycles, since there can be up to 40 sprites.
 
     @paragraph Drawing\
@@ -729,7 +720,7 @@
 
     @newpage\
 
-    @subsubsection (label=subsubsec:ppu-registers) PPU registers\
+    @subsubsection (label=subsubsec:ppu-registers) PPU Registers\
 
     Now let's take a look at the registers that allow the processor to control the PPU.
 
@@ -850,7 +841,7 @@
     @paragraph LYC\
     (LY Compare), as we saw earlier, is the register used to set the \textbf{Coincidence flag} inside LCDS register and is mapped to **0xFF45**.
 
-    @subsection (label=subsec:first-ppu-implementation) First implementation\
+    @subsection (label=subsec:first-ppu-implementation) First Implementation\
 
     To begin, we will define the structure of our PPU class.
 
@@ -864,12 +855,12 @@
 
     As you can see, at lines 28 and 44, we are finally incrementing LY.
 
-    @section (label=sec:execution-so-far-2) The execution so far\
+    @section (label=sec:execution-so-far-2) The Execution So Far\
 
     Running the boot program at this stage successfully executes the Nintendo logo scrolling section. However, it gets stuck in another infinite loop--this time during the logo check. Since we have not yet emulated the game cartridge, the comparison cannot succeed. Though, we still managed to make meaningful progress.
     That said, there is no time to celebrate just yet--there is still plenty of work ahead.
 
-    @section (label=sec:ppu-second) PPU -- Further progress\
+    @section (label=sec:ppu-second) PPU -- Further Progress\
 
     Finally, after putting it off for quite some time, it is finally time to implement the screen and begin rendering at least the Background layer.
     To do so, we first need to understand how the PPU pushes the pixels into the screen.
@@ -926,23 +917,23 @@
 
     @newpage\
 
-    @subsection (label=subsec:ppu-implementation-2) Second implementation\
+    @subsection (label=subsec:ppu-implementation-2) Second Implementation\
 
     Let's now take a look at how I chose to implement everything discussed so far.
 
-    @subsubsection (label=subsubsec:ppu-update-2) The update method\
+    @subsubsection (label=subsubsec:ppu-update-2) The Update Method\
 
     In addition to what was happening before in the **update** method, we are now switching through **real modes** that actually do something.
 
     @code (language=C++, label=lst:ppu-implementation-2) code/ppu-stages-1.code\
 
-    @subsubsection (label=subsubsec:ppu-draw-method) Draw and push methods\
+    @subsubsection (label=subsubsec:ppu-draw-method) Draw and Push Methods\
 
     @code (language=C++, label=lst:ppu-draw) code/ppu-draw.code\
 
     @newpage\
 
-    @subsubsection (label=subsubsec:ppu-lcd-implementation) The LCD class\
+    @subsubsection (label=subsubsec:ppu-lcd-implementation) The LCD Class\
 
     I still have not clearified what the **LCD class**--used throughtout these methods--actually does.
     Following the structure of the real Game Boy, I wanted to separate the LCD from the PPU. As a result, the LCD has its own class, although it is quite simple and straightforward.
@@ -959,7 +950,7 @@
     What I considered at first was using **plain OpenGL**, which would have been a good excuse to finally learn how to use it. However, OpenGL is built around rendering using **vertices and polygons**. What I thought would be a better approach is to edit individual pixels instead, as we are currently doing with the LCD byte array.
     I found out that **SDL** makes this possible, thanks to a low-level API that gives us direct access to the pixel array that will be rendered on screen. For this project, I am using the latest SDL version at the time I am writing this paper, which is **SDL 3.2.10**.
 
-    @subsection (label=subsec:cpu-window-implementation) CPU Window implementation\
+    @subsection (label=subsec:cpu-window-implementation) CPU Window Implementation\
 
     At first, I just needed to check if the copyright symbol was showing up correctly and progressively scrolling from the top to the center of the screen. Thus, for now, a very inefficient, non-hardware-accelerated implementation was good enough.
 
@@ -985,7 +976,7 @@
     Problematically though, our window (the Game Boy display) is too small for modern displays.
     On my 1920x1080 display, it was barely even visible. There is no doubt we need to implement a way to **scale** the window up.
 
-    @subsection (label=subsec:hardware-accelerated-window) GPU-accelerated window\
+    @subsection (label=subsec:hardware-accelerated-window) GPU-Accelerated Window\
 
     This kind of task sounds like the perfect job for the GPU, though. So, I started working on a fully GPU-based implementation using the **CUDA library**.
     This library is made by NVIDIA and provides an API that lets us write **kernels**, which will be executed in parallel on the GPU.
@@ -1041,5 +1032,76 @@
 
     It goes without saying that this GPU-based approach is significantly more efficient than the earlier CPU-only implementation.
 
-    @section (label=sec:emulating-cartridge) Emulating the game cartridge\
+    @section (label=sec:emulating-cartridge) Emulating the Game Cartridge\
+
+    Now that have overcome yet another obstacle, it is time to complete our boot ROM emulation.
+    As previously noted in @ref subsec:boot-analysis\, the last barrier to the boot process was the "NINTENDO" logo comparison between a version stored inside the boot ROM and one stored inside the **game ROM**.
+    It should be clear by now that, in order to proceed further and eventually run actual games, we must emulate the game cartridge.
+    \\
+    Before implementing this, it is necessary to understand how game cartridges are structured and accessed.
+
+    @subsection (label=sec:cartridge) Cartridge\
+
+    We recall from @ref subsec:memory-mapping\ $$fs$$ that cartridge data is accessed through memory addresses ranging from **0x0000** to **0x7FFF**.
+    We also remember that this data is split into **two** **16Kb banks**, with the second one being marked as **switchable**.
+    It is fascinating to know that some cartridges did not only contain the ROM banks with the game code (as I originally thought), but could also supply additional components, such as SRAMs (Static Random-Access Memory) or a battery to preserve save data.
+    Going back to the **two** banks, due to Game Boy address bus limitations, only **32 Kb** of memory could be accessed at a time.
+    Problematically though, 32 Kb of game memory was not enough for most of the games available on Game Boy, if we think that a game does not only have its code to store, but also graphics tiles, audio tables and other data needed for the game.
+    This problem was addressed using **Memory Bank Controllers** (MBCs)--hardware that enabled switching between different **ROM regions**.
+    However, these additional components are not supported on my emulator, since the original Tetris DMG cartridge just included a 32 Kb ROM.
+    
+    @subsection (label=subsec:cartridge-structure) Structure\
+
+    Despite these differences in hardware, all Game Boy cartridges conform to a standardized structure:
+
+    @list {
+        @item {
+            The region from 0x0000 to 0x00FF typically includes interrupt handlers and other startup routines.
+        }
+        @item {
+            The range 0x0100 to 0x014F contains the cartridge header, which stores metadata about the game.
+        }
+        @item {
+            The remaining memory contains the actual game code and data.
+        }
+    }
+
+    @subsection (label=subsec:game-cartridge-implementation) Implementation\
+
+    In my Emulator, file paths are actually hard-coded.
+    At startup, the program specifically looks for files named @latex { \textbf{dmg\_boot.bin} } and **tetris.gb**.
+
+    \\
+    @latex {
+        \lstinline!cpu.load_bootup("dmg_boot.bin", mem);!
+        \\
+        \lstinline!cpu.load_rom("tetris.gb", mem);!
+    }
+    \\
+
+    We have already covered how @latex { \textbf{load\_bootup} } works.
+    What remains is the implementation of @latex { \textbf{load\_rom} }.
+
+    @code (language=C++, label=lst:game-load) code/game-load.code\
+
+    One important detail here is that we cannot just read the **.gb** file and copy its content inside the **Memory** structure. Doing so would overwrite the boot ROM, specifically the first **256 bytes** used during the boot sequence.
+    What we are doing instead is to only copy the data starting from address **0x100**, while to temporarily store the first bytes inside a buffer. Once the boot ROM has finished executing, we then copy those initial bytes into memory to complete the emulation of the cartridge.
+
+    @subsection (label=subsec:debugging-changes) How the Debugging Process Changed\
+
+    When transitioning to running Tetris on the emulator, I realized that disassembling the entire ROM manually would have been far too time-consuming. While I still aimed to understand the program flow and verify how the emulator behaved, I decided to rely on this existing @href https://github.com/osnr/tetris/ disassembled version of Tetris\.
+    \\
+    This shift allowed me to stay focused on debugging and improving the emulator itself rather than investing excessive time deciphering game code. The disassembly served as a valuable reference, helping me interpret instructions and memory interactions more efficiently while still enabling a hands-on learning experience.
+
+    @newpage\
+
+    @section (label=subsec:first-tetris-run) First Tetris Execution\
+
+    @section (label=sec:first-code-analysis) First Code Analysis: the Resetting Problem\
+
+    @section (label=sec:joypad) Joypad Emulation\
+
+    @section (label=sec:dma) DMA\
+
+    @section (label=sec:credits-scene) The Credits Scene\
 }
