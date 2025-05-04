@@ -1,0 +1,12 @@
+; Read buttons & return values
+l02c4:
+; Function that returns a value in FF80
+    call    l29a6           ; 02c4
+    ...
+; If all arrow keys are down
+; (if lower 4 bits of value at FF80 are all 1s)
+; at the same time, then jump to 21b
+    ldh     a,(80h)         ; 02cd
+    and     0fh             ; 02cf
+    cp      0fh             ; 02d1
+    jp      z,l021b         ; 02d3

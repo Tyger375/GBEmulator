@@ -1,6 +1,7 @@
 @class article\
 
 @latex {
+    \usepackage{makecell}
     \usepackage{multirow}
     \usepackage{xspace}
     \usepackage{textcomp}
@@ -1097,11 +1098,104 @@
 
     @section (label=subsec:first-tetris-run) First Tetris Execution\
 
-    @section (label=sec:first-code-analysis) First Code Analysis: the Resetting Problem\
+    At this point, I wanted to try executing the game for the first time, even though I knew there were still many features left to implement. As expected, after finally seeing our window with the whole Nintendo logo, running Tetris at this stage results in a completely white screen.
+
+    @figure (H) {
+        @graphic (width=0.6$$textwidth$$) images/logo.png\
+        @centering\
+        @caption Final logo\
+        @label fig:final-logo\
+    }
+
+    It was finally time to analyze the disassembly. That is when I noticed that Tetris checks if all the arrow keys are down at the same time and, if it is the case, a reset occurs. Thus, the next thing to add is the joypad emulation.
+
+    @code (language=Asm, label=lst:buttons-check) code/buttons-check.code\
+
+    What initially confused me was why the game assumed buttons were being pressed, even though I had not implemented input handling yet.
+
+    \\ \\
+    among other initialization instructions from **0x0199** to **0x02C2**, something called "DMA transfer" was being executed.
+    This reveals our first issue: we still have not implemented one of the most important features on the Game Boy.
+
+    // TODO: put later (DMA), resetting problem here
 
     @section (label=sec:joypad) Joypad Emulation\
 
-    @section (label=sec:dma) DMA\
+    The Game Boy features a simple input scheme: four directional buttons and four action buttons — A, B, Select, and Start.
+
+    @subsection (label=subsec:joypad-register) Joypad Register\
+
+    Games can access inputs through a register located at memory address **0xFF00**.
+    Buttons were interestingly arranged as a **2x4 matrix**.
+
+    @latex {
+        \begin{table}[H]
+        \centering
+        \begin{tabular}{ | c | c | c | c | c | c | c | }
+            \toprule
+            7 6 & 5 & 4 & 3 & 2 & 1 & 0 \\
+            \midrule
+            & \makecell{Select\\buttons} & \makecell{Select\\d-pad} & \makecell{Start /\\Down} & \makecell{Select /\\Up} & \makecell{B /\\Left} & \makecell{A /\\Right} \\
+            \midrule
+        \end{tabular}
+
+        \caption{Joypad flags}
+        \end{table}
+    }
+
+    @list {
+        @item {
+            Select buttons: When this bit is 0, the state of the Start, Select, B, and A buttons can be read from the lower 4 bits.
+        }
+        @item {
+            Select d-pad: When this bit is 0, the state of the directional (D-pad) keys is available in the lower 4 bits.
+        }
+        @item {
+            The lower 4 bits are read-only. **Notably**, unlike most of the Game Boy's conventions, **a pressed button is represented by a 0**, not a 1.
+        }
+    }
+
+    Personally, I do not see why the controls could not have been arranged as a simple 1x8 matrix. I assume there must have been a specific reason why the designers opted for this layout instead.
 
     @section (label=sec:credits-scene) The Credits Scene\
+
+    @section (label=sec:dma) DMA\
+
+    Direct Memory Access (DMA) is a process by which bytes from a specified memory region are copied by hardware into another region, instead of relying on copying with software. On the Game Boy, the destination of this transfer is always the Object Attribute Memory (OAM).
+    This approach is significantly faster than copying data through software, although it comes with certain hardware limitations, as we will see.
+
+    @subsection (label=subsec:dma-control-register) DMA Control Register\
+
+    Writing to the DMA control register, located at **0xFF46**, initiates a DMA transfer.
+    The value written to this register determines the **source address**, and the **destination** is always fixed:
+    \\
+    @latex {
+        \lstinline!Source*: 0xXX00 - 0xXX9F! \\
+        \lstinline!Destination: 0xFE00 - 0xFE9F! \\
+        \lstinline!*(XX) is the value inside the register! \\
+    }
+    \\
+
+    After writing to the register, a delay of **4 clock cycles** occurs. Then, one byte is transferred every 4 clock cycles, for a total duration of **640 clock cycles**, plus the initial 4-cycle delay, totaling **644 clock cycles**.
+
+    @subsection (label=subsec:dma-bus-conflict) DMA Bus Conflicts\
+
+    Although DMA is highly efficient, it introduces a key limitation.
+    While DMA is transferring bytes, the **data buses** used to access RAM and ROM become unavailable, effectively **stalling the CPU**.
+    Fortunately, **High RAM** is not affected by this restriction. Hence, games usually would copy small routines into this region that simply wait for the DMA transfer to complete.
+
+    @newpage\
+
+    @subsection (label=subsec:tetris-dma) DMA Transfers in Tetris\
+
+    That is exactly what Tetris is doing. \\
+    First, during game initialization, a routine of **12 bytes** at region **0x2A7F** - **0x2A8A** is copied to region **0xFFB6** - **0xFFC1**.
+    \\
+    This routine will write to 0xFF46 (DMA control register) to copy bytes from **0xC000** - **0xC09F** to **0xFE00** - **0xFE9F** and wait for **DMA to complete**.
+
+    @code (language=Asm, label=lst:dma-copy) code/dma-copy.code\
+
+    Then this routine will be called **once** at first an then once every time a VBlank interrupt is called.
+
+    @code (language=Asm, label=lst:dma-vblank) code/dma-vblank.code\
 }

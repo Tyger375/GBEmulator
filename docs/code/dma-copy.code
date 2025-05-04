@@ -1,0 +1,20 @@
+; Copy DMA transfer routine to ffb6
+    ld      c,0b6h          ; 0293
+    ld      b,0ch           ; 0295
+    ld      hl,l2a7f        ; 0297
+l029a:
+    ldi     a,(hl)          ; 029a
+    ldh     (c),a           ; 029b
+    inc     c               ; 029c
+    dec     b               ; 029d
+    jr      nz,l029a        ; 029e
+
+...
+
+; Initiate DMA transfer from C000 to FE00
+l2a7f:  ld      a,0c0h          ; 2a7f
+        ldh     (46h),a         ; 2a81
+        ld      a,28h           ; 2a83
+l2a85:  dec     a               ; 2a85
+        jr      nz,l2a85        ; 2a86
+        ret                     ; 2a88
