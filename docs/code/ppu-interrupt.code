@@ -1,0 +1,15 @@
+case 0: { // Simulating H-Blank
+    total_cycles += 2;
+    if (total_cycles >= 456) {
+        sprites_buffer.clear();
+        total_cycles = 0;
+        mem[LY_REG]++;
+        if (mem[LY_REG] >= 144) {
+            mode = 1; // Entering VBlank
+            mem[IF_REG] |= 1; // <-- Calling interrupt
+        } else {
+            mode = 2;
+        }
+    }
+    break;
+}

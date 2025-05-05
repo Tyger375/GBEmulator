@@ -57,7 +57,6 @@ void PPU::update(u32 cycles, Memory& mem, LCD& lcd) {
                     } else {
                         mode = 2;
                     }
-                    break;
                 }
                 break;
             }

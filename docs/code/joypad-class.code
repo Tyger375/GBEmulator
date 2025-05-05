@@ -1,9 +1,3 @@
-#pragma once
-#include <iostream>
-#include <SDL3/SDL_events.h>
-#include "../defs.hpp"
-#include "../memory/memory.hpp"
-
 class Joypad {
     static constexpr Word JOYPAD_REG = 0xFF00;
     static constexpr Word IF_REG = 0xFF0F;

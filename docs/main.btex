@@ -179,7 +179,7 @@
     which always offsets from address **FF00**, 
     pointing to **High-RAM** and the **I/O registers**.
     \\
-    I think custom-making their own CPU was the perfect choice for Nintendo, as it allowed them to implement changes like these to better suit their needs, save instruction bytes, and increase performace.
+    Custom-making their own CPU was the perfect choice for Nintendo, as it allowed them to implement changes like these to better suit their needs, save instruction bytes, and increase performace.
     \\
     CPUs are the main core of every computer and what they do most of the time is execute instructions defined in some memory.
     In the next section, we will give a brief summary of the different types of instructions.
@@ -324,7 +324,6 @@
     }
 
     Instructions also can take different amount of clock cycles to execute.
-    (TODO)
 
     @newpage\
 
@@ -342,7 +341,7 @@
 
     The **execute** function is called by the main loop and, besides executing an instruction, it also handles interrupts.
 
-    @code (language=C++, label=lst:cpu-execute) ./code/execute.code\
+    @code (language=C++, label=lst:cpu-execute) ./code/cpu-execute.code\
 
     While the @latex { \textbf{exec\_op} } is responsible for handling the operations.
 
@@ -524,9 +523,9 @@
 
     These are the different types of interrupts, each with a specific address where the handler execution code begins.
 
-    @subsubsection (label=subsubsec:vblank) VBlank\
+    @subsubsection (label=subsubsec:vblank) V-Blank\
 
-    This interrupt is requested every time the Game Boy enters the VBlank mode, we will see it when we will talk about the PPU.
+    This interrupt is requested every time the Game Boy enters the V-Blank mode, we will see it when we will talk about the PPU.
     It occurs around 59.7 times per second and starts at address **0x0040**.
 
     @subsubsection (label=subsubsec:lcd) LCD STAT\
@@ -560,7 +559,7 @@
             \toprule
             & 7 6 5 & 4 & 3 & 2 & 1 & 0 \\
             \midrule
-            IE & & Joypad & Serial & Timer & LCD STAT & VBlank \\
+            IE & & Joypad & Serial & Timer & LCD STAT & V-Blank \\
             \midrule
         \end{tabular}
 
@@ -577,7 +576,7 @@
             \toprule
             & 7 6 5 & 4 & 3 & 2 & 1 & 0 \\
             \midrule
-            IF & & Joypad & Serial & Timer & LCD STAT & VBlank \\
+            IF & & Joypad & Serial & Timer & LCD STAT & V-Blank \\
             \midrule
         \end{tabular}
 
@@ -585,7 +584,7 @@
         \end{table}
     }
 
-    In case more than one interrupt is requested at the same time, the one with the highest priority is serviced first. The priorities follow the order of the bits in the IE and IF registers, with bit 0 (VBlank) having the highest priority and bit 4 having the lowest one.
+    In case more than one interrupt is requested at the same time, the one with the highest priority is serviced first. The priorities follow the order of the bits in the IE and IF registers, with bit 0 (V-Blank) having the highest priority and bit 4 having the lowest one.
 
     @subsection (label=subsec:interrupts-implementation) Implementation\
 
@@ -660,8 +659,6 @@
     \\
     Sprites are stored in the region usually called OAM (Object Attribute Memory). This is because each sprite does not just have to include a tile number but it also needs to supply other information.
     This OAM section ranges from **0xFE00** to **0xFE9F**, each sprite entry is structured as follows:
-    \\
-    TODO: maybe add more details about this
     @list {
         @item {
             **Byte 0 - Y-Position**
@@ -941,7 +938,7 @@
 
     @code (language=C++, label=lst:lcd) code/lcd.code\
 
-    As we can see here, we merely keep a **byte array** of pixels, each storing the color of a pixels, ready to be rendered on our emulated window.
+    As we can see here, we merely keep a **byte array** of pixels, each storing the color of a pixel, ready to be rendered on our emulated window.
 
     @newpage\
 
@@ -1113,12 +1110,6 @@
 
     What initially confused me was why the game assumed buttons were being pressed, even though I had not implemented input handling yet.
 
-    \\ \\
-    among other initialization instructions from **0x0199** to **0x02C2**, something called "DMA transfer" was being executed.
-    This reveals our first issue: we still have not implemented one of the most important features on the Game Boy.
-
-    // TODO: put later (DMA), resetting problem here
-
     @section (label=sec:joypad) Joypad Emulation\
 
     The Game Boy features a simple input scheme: four directional buttons and four action buttons — A, B, Select, and Start.
@@ -1157,10 +1148,56 @@
 
     Personally, I do not see why the controls could not have been arranged as a simple 1x8 matrix. I assume there must have been a specific reason why the designers opted for this layout instead.
 
-    @section (label=sec:credits-scene) The Credits Scene\
+    @newpage\
+
+    @subsection (label=subsec:joypad-implementation) Implementation\
+
+    Simulating a joypad is as easy as getting the input from the keyboard using SDL and update the register flags accordingly.
+
+    @code (language=C++, label=lst:joypad-class) code/joypad-class.code\
+
+    I chose to map the keyboard arrows to the directional inputs, keep "A" and "B" as-is, and use "T" and "Y" for Start and Select, respectively.
+
+    @code (language=C++, label=lst:joypad) code/joypad.code\
+
+    @section (label=sec:credits-scene) The Credits Screen\
+
+    Finally, we can see the credits scene, confirming that the essential game systems—such as input handling, memory mapping, and rendering—are now working together as intended. This scene displays the developer and publisher credits, and is one of the earliest indicators that the emulator is beginning to execute the game logic correctly.
+    \\
+    This moment is significant: it demonstrates that the CPU is able to fetch and decode instructions, graphics are being drawn through the PPU correctly.
+    \\
+    However, this scene is static by design. The game does not yet allow any interaction, and the issue now is that the game does not progress at all--it remains stuck on the credits screen indefinitely.
+
+    @figure (H) {
+        @graphic (width=.9$$textwidth$$) images/tetris-credits.png\
+        @centering\
+        @caption Tetris Credits\
+        @label fig:tetris-credits\
+    }
+
+    @newpage\
+
+    @section (label=sec:title-screen) The Title Screen\
+
+    After further debugging, I figure out that I had forgotten to trigger the V-Blank interrupt in the PPU update method. This interrupt is crucial because, after completing its initialization, the game waits for a V-Blank signal to proceed. Without it, execution stalls, leaving the game effectively paused on this screen.
+
+    @code (language=C++, label=lst:ppu-interrupt) code/ppu-interrupt.code\
+
+    This little distraction of mine, which actually took me a few days to find, was the final obstacle that was preventing the **title screen** to show.
+
+    @figure (H) {
+        @graphic (width=0.8$$textwidth$$) images/tetris-main-screen.png\
+        @centering\
+        @caption Main Screen\
+        @label fig:tetris-main-screen\
+    }
+
+    However, one element is still missing from this screen: the arrow that indicates the player's selection. This brings us to the next major step in developing our emulator--implementing **sprites**. The arrow, as well as the **Tetriminos** and other elements, are moving objects, which are still to be implemented in our **rendering pipeline**. To support them, we will need to implement DMA transfers and extend the PPU to handle sprites rendering.
 
     @section (label=sec:dma) DMA\
 
+    Among other initialization instructions from **0x0199** to **0x02C2**, something called "DMA transfer" was being executed. This was not initially necessary for displaying the credits screen, as all the text was rendered on the **Background layer**.
+    \\
     Direct Memory Access (DMA) is a process by which bytes from a specified memory region are copied by hardware into another region, instead of relying on copying with software. On the Game Boy, the destination of this transfer is always the Object Attribute Memory (OAM).
     This approach is significantly faster than copying data through software, although it comes with certain hardware limitations, as we will see.
 
@@ -1195,7 +1232,21 @@
 
     @code (language=Asm, label=lst:dma-copy) code/dma-copy.code\
 
-    Then this routine will be called **once** at first an then once every time a VBlank interrupt is called.
+    Then this routine will be called **once** at first an then once every time a V-Blank interrupt is called.
 
     @code (language=Asm, label=lst:dma-vblank) code/dma-vblank.code\
+
+    @newpage\
+
+    @subsection (label=subsec:dma-implementation) Implementation\
+
+    The implementation of the DMA class is relatively straightforward.
+
+    @code (language=C++, label=lst:dma-class) code/dma-class.code\
+
+    @code (language=C++, label=lst:dma-implementation) code/dma.code\
+
+    Too keep things simple, though, I decided to ignore the bus conflict issue. I relied on the assumption that Tetris had it handled and was correctly waiting for DMA to finish, following the good practice explained above.
+
+    @section (label=sec:ppu-third) PPU -- Sprites\
 }
