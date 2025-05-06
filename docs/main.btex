@@ -1306,5 +1306,51 @@
     }
     \\
 
-    
+    After fixing this issue, the game finally became playable.
+
+    @figure (H) {
+        @graphic (width=0.7$$textwidth$$) images/tetris-gameplay-1.png\
+        @centering\
+        @caption The Gameplay\
+        @label fig:tetris-gameplay-1\
+    }
+
+    @section (label=sec:final-troubleshooting) Final Troubleshooting\
+
+    Before considering the project complete, there were still two remaining bugs to address—one relatively minor and unrelated to the main game, and another that was more critical.
+
+    @subsection (label=subsec:score-issue) Score Issue\
+
+    As you may have noticed in figure @ref fig:tetris-gameplay-1\, the score is stuck at **999999**. After investigating, I discovered that the root cause was a mistake in my implementation of the **DAA** (Decimal Adjust Accumulator) CPU instruction.
+    Specifically, I actually made a typo at the beginning of the project in the calculation of the **carry (C) flag**. In my initial implementation, I mistakenly added adj + 0xFF instead of masking adj with 0xFF, as shown below:
+
+    \\
+    @latex {
+        $
+        \lstinline!c = ((A & 0xFF) + (adj + 0xFF)) > 0xFF;! \rightarrow
+        \lstinline!c = ((A & 0xFF) + (adj & 0xFF)) > 0xFF;!
+        $
+    }
+    \\
+
+    This error caused the carry condition to **always evaluate as true**, forcing the **C flag** to be **set** regardless of the actual result. As a consequence, the score logic malfunctioned, constantly pushing the counter toward its maximum value of **999999**.
+
+    @subsection (label=subsec:memory-leakage) GPU Memory Leakage\
+
+    A more critical issue emerged from the CUDA video scaling implementation.
+    Initially, for each frame, I was allocating memory on the GPU for the pixel buffers.
+    However, I was not freeing that memory afterward. Over time, this led to memory leaks, and eventually the program would freeze as the GPU ran out of allocatable memory.
+
+    What I ended up doing, instead, is to pre-allocate these buffers only once at the start of the emulator's execution--since their size does not change throughtout runtime--and free them upon closing the window. This approach ensures stable memory usage and prevents the emulator from crashing due to memory exhaustion.
+
+    @code (language=C++, label=lst:cuda-fix) code/cuda-fix.code\
+
+    With these final issues resolved, the game is now fully playable, behaving as expected from the original Tetris experience.
+
+    @figure (H) {
+        @graphic (width=0.7$$textwidth$$) images/tetris-gameplay-final.png\
+        @centering\
+        @caption The Final Gameplay\
+        @label fig:tetris-gameplay-final\
+    }
 }

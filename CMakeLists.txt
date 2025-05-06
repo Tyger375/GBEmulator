@@ -45,7 +45,9 @@ add_executable(GBEmulator
 
         dma/dma.cpp
         dma/dma.hpp
+
         joypad/joypad.hpp
+        joypad/joypad.cpp
 )
 
 set_target_properties(GBEmulator PROPERTIES

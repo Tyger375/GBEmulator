@@ -1,0 +1,45 @@
+int main() {
+    ...
+
+    Byte* cuda_video;
+    size_t pitch = 0;
+
+    Uint32* cuda_scaled_video;
+    size_t scaled_pitch = 0;
+
+    prepare_pointers(
+            &cuda_video,
+            &pitch,
+            &cuda_scaled_video,
+            &scaled_pitch,
+            DISPLAY_WIDTH, DISPLAY_HEIGHT,
+            scale
+        );
+
+    ...
+
+    while (running) {
+        ...
+
+        if (lcd.is_ready() && !rendered) {
+            build_video(
+                    cuda_video,
+                    cuda_scaled_video,
+                    lcd.get_display(),
+                    pixels,
+                    DISPLAY_WIDTH, DISPLAY_HEIGHT,
+                    scale
+                );
+            rendered = true;
+
+            SDL_UpdateWindowSurface(window);
+        } else if (!lcd.is_ready()) {
+            rendered = false;
+        }
+    }
+
+    SDL_Quit();
+    free_pointers(cuda_video, cuda_scaled_video);
+
+    return 0;
+}
