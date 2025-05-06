@@ -1,0 +1,4 @@
+; Set Rom bank to zero
+; (Not needed since the original has no MBC.)
+        ld      a,1             ; 0252
+        ld      (2000h),a       ; 0254

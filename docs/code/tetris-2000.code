@@ -1,0 +1,8 @@
+l1ffe:
+    ldi     (hl),a          ; 1ffe
+    dec     b               ; 1fff
+    jr      nz,l1ffe        ; *2000* 
+    add     hl,de           ; 2002
+    dec     c               ; 2003
+    jr      nz,l1ffc        ; 2004
+    ret                     ; 2006

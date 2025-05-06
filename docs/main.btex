@@ -1246,7 +1246,65 @@
 
     @code (language=C++, label=lst:dma-implementation) code/dma.code\
 
-    Too keep things simple, though, I decided to ignore the bus conflict issue. I relied on the assumption that Tetris had it handled and was correctly waiting for DMA to finish, following the good practice explained above.
+    To keep things simple, though, I decided to ignore the bus conflict issue. I relied on the assumption that Tetris had it handled and was correctly waiting for DMA to finish, following the good practice explained above.
 
     @section (label=sec:ppu-third) PPU -- Sprites\
+
+    As mentioned in @ref sec:ppu-second\, the PPU architecture includes **two FIFOs**.
+    Similarly to the steps that we described in @ref subsec:fetching-background\, the **Sprites Fetcher** scans the OAM local buffer to identify which sprites should be rendered.
+
+    @subsection (label=subsec:timing-issues) Timing Issues\
+
+    Although this stage might seem straightforward at first glance, sprite fetching introduces subtle and nontrivial timing complexities.
+    When a sprite fetch is triggered, the Background Fetcher is **immediately reset** to step 1 and **paused**.
+    It remains inactive until the sprite's data has been fully fetched and loaded into the Sprite FIFO.
+
+    Once the sprite fetch completes, the PPU begins pushing pixels to the LCD **immediately**. At the same time, the Background Fetcher is restarted from step 1 to resume preparing background pixels. However, fetching the next group of 8 background pixels always takes **6 clock cycles**. During this time, the PPU continues shifting pixels out of the FIFO at the usual rate—**1 pixel per clock cycle**. If the Background FIFO had fewer than 6 pixels left at the moment the sprite fetch ended, the PPU will stall and wait for the FIFO to refill.
+
+    This results in a significant rendering delay, creating an important timing dependency and leaving little tollerance between background and sprite rendering. It should go without saying that implementing this stage introduced a fair amount of complications.
+
+    @subsection (label=subsec:ppu-sprites-implementation) Implementation\
+
+    Given all these considerations, I modified the previously existing methods to support sprite rendering.
+
+    @code (language=C++, label=lst:ppu-draw-2) code/ppu-draw-2.code\
+
+    @newpage\
+
+    This is followed by the @latex { \textbf{sprites\_draw} } method.
+
+    @code (language=C++, label=lst:ppu-sprites-draw) code/ppu-sprites-draw.code\
+
+    And now the main screen is done!
+
+    @figure (H) {
+        @graphic (width=.8$$textwidth$$) images/tetris-main-screen-final.png\
+        @centering\
+        @caption Final Tetris Main Screen\
+        @label fig:tetris-main-screen-final\
+    }
+
+    @section (label=sec:tetris-rom-bug) A Surprising Bug: Writing to ROM\
+
+    After all this work, it was finally time to try playing the game.
+    Unfortunately, my excitement was short-lived-when attempting to start an actual game, the software unexpectedly reset.
+    Actually, when I first analyzed the code, I noticed a peculiar segment of code I had ignored for a long time.
+
+    @code (language=Asm, label=lst:tetris-rom-bug) code/tetris-rom-bug.code\
+
+    This snippet attempted to write a byte to **address 0x2000**.
+    Obviously, on a real Game Boy, such a write would silently fail, thus, this issue was not relevant.
+    However, due to my own decision I stated at the beginning of this paper (@ref subsec:choices\), my emulator **allowed** this memory to be overwritten.
+
+    @code (language=Asm, label=lst:tetris-2000) code/tetris-2000.code\
+
+    This caused the original conditional jump to be modified into:
+
+    \\
+    @latex {
+        \lstinline!ld BC, 0xFC20!
+    }
+    \\
+
+    
 }

@@ -1,0 +1,21 @@
+void PPU::draw(u32 cycles, Memory& mem) {
+    for (u32 i = 0; i < cycles / 2; ++i) {
+        background_draw(mem);
+        sprites_draw(mem);
+    }
+}
+
+void PPU::pop_and_mix_to_lcd(u32 cycles, LCD& lcd) {
+    if (sprites_drawing_step > 1) return;
+
+    for (u32 i = 0; i < cycles; ++i) {
+        if (background_fifo.is_empty()) return;
+
+        Pixel pixel = background_fifo.pop();
+        if (!oam_fifo.is_empty()) {
+            Pixel oam_pixel = oam_fifo.pop();
+            pixel = oam_pixel;
+        }
+        lcd.push(pixel);
+    }
+}

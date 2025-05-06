@@ -1,0 +1,20 @@
+void PPU::sprites_draw(Memory& mem) {
+    switch (sprites_drawing_step) {
+        case 1: {
+            sprites_fetch_tile_number(mem);
+            break;
+        }
+        case 2: {
+            sprites_fetch_tile_data_low(mem);
+            break;
+        }
+        case 3: {
+            sprites_fetch_tile_data_high(mem);
+            break;
+        }
+        case 4: {
+            sprites_push_tile_data(mem);
+            break;
+        }
+    }
+}
