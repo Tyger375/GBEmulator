@@ -352,12 +352,11 @@
     \\
     I decided to download the binary file and start disassemblying by myself and studying from scratch.
     \\
-    (DISASSEMBLY MAYBE)
-    \\
+    (DISASSEMBLY)
 
     @subsection (label=subsec:boot-analysis) Boot Code Analysis\
 
-    For anyone interested, I will attach my disassembly along with some comments and thoughts I jotted down while studying it.
+    For anyone interested, I attached a digitalized version of my disassembly that I first studied on paper.
     \\
     Anyways, here is what the code does:
     @list {
