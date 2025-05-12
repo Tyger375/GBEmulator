@@ -12,7 +12,7 @@
 
 @title Design and Implementation of a Game Boy Emulator: Exploring Hardware Abstraction Through Emulation\
 @date\
-@author Takanen Edoardo\
+@author Edoardo Takanen\
 
 @env {
     pdftitle = Design and Implementation of a Game Boy Emulator: Exploring Hardware Abstraction Through Emulation\
@@ -26,22 +26,21 @@
         **Introduction**
     }
 
-    As a kid, I used to play with some @latex { Nintendo\textsuperscript{\textcopyright} } consoles like the Wii or the DS and I have always been keen about the games they make.
-    This passion for videogames grew on me so that I got interested in the making process of them, leading to game development.
-    I never asked myself one question, though, until this year, which is how are these games able to run onto this consoles? and how can people
-    make emulators so that I could play on my personal computer?
+    As a kid, I used to play with some @latex { Nintendo\textsuperscript{\textcopyright} } consoles like the Wii or the DS and I have always been enthusiastic about the games they make.
+    This passion for videogames grew on me so that I got interested in the making process of them, leading towards game development.
+    There was one question I had never really asked myself--at least not until this year.
+    \\
+    How do people create emulators that let us re-experience retro games on modern computers, even those we never had the chance to play growing up?
     Thus, I decided to embrace the unknown world of emulation, because I have always been fascinated by it but always took it for granted.
+    This project gave me the opportunity to explore how hardware works from ground up, without requiring direct work on physical electronics or integrated circuits for now.
+    Still, a possible future expansion of this project could involve building real hardware from scratch. While the idea of doing so sounded frightening before this project, I can confidently say this emulator provided me with a solid foundation of knowledge in order to give it a try some day.
     \\
-    Emulation is not well explained on the Internet.
-    Mainly, the results you will find if you search for it are "the program pretends to be the console" or "you will be able to play old titles".
-    Unfortunately I was not satisfied with these responses and I wanted to know more. Thus, my emulation journey started with looking for a full definition of this process.
-    \\
+    Now, my emulation journey started with looking for a full definition of this process.
     I will try to give my own definition of emulation, so that I can lay a starting point to a general knowledge that will be then deepened during the paper.
-    With this being said, to "make an emulator" means to develop the software that will do exactly what the hardware of the console does, so that when plugging the game data,
-    the program will know how to read and handle it. \\
+    To "make an emulator" means to develop the software that will do exactly what the hardware of the console does, so that when plugging the game data, the program will know how to read and handle it. \\
     Emulation can only happen when the machine in which we run the software is more powerful than the hardware we want to emulate.
-    For example, if our console has 2Kb of memory, we will not be able to emulate it on a computer that has 2Kb or less, since we also have to consider that
-    the host computer will have an operating system running (which uses some of the RAM).
+    For example, if our console has 2Kb of memory, we will not be able to emulate it on a computer that has 2Kb or less, since we also have to consider that the host computer will have an operating system running (which uses some of the RAM).
+    \\
     I chose to make a Game Boy emulator, because while looking for the retro consoles, it seemed the least difficult when talking about the hardware structure complexity,
     meaning a good way to start tackling this topic.
     @newpage\
@@ -50,19 +49,18 @@
     @newpage\
 
     @section (label=sec:premises) Premises\
-    This emulator project is purely for understanding the concepts and the theory about how a machine like a console (or similarly a computer) is made (and also for fun).
-    There are many better-developed Game Boy emulators online, and making one that could compete with the other popular ones is nowhere near my goals.
-    In addition, I could not achieve the level of knowledge I want to reach if I just looked at other people's codes, I wanted to **fully** understand the subject.
+    As previously mentioned, this emulator project was **purely** for **understanding the concepts** and the theory about how a machine like a console (or similarly a computer) is made (and also for fun).
+    There are many better-developed Game Boy emulators online, and making one that could compete with the other popular ones was nowhere near my goals.
+    \\
+    In addition, I could not achieve the level of knowledge I wanted to reach if I just looked at other people's codes, I wanted to **fully** understand the subject.
     Obviously though I have to start somewhere, I do not have the skills to reverse-engineer a real Game Boy (although it would be an extremely interesting challenge),
     for this reason I will only consult theory guides made by many passionate developers and hackers that already did the work of studying the Game Boy from scratch for us.
     For a better understanding, I used **two** sources for this project, in order to have a dual perspective on the study.\\
     For anyone who would like to dig into this challenge too, the guides are @href https://gbdev.io/ GBDev\$$fs$$ and @href https://hacktix.github.io/GBEDG/ GBEDG\.
     \\
     **What this paper is not** \\
-    This paper is not and was not intended as a guide, I previously attached some real references.
-    This document is a report of my journey throughtout the development of the emulator, made to understand the fundamentals of what is around us, from personal computers 
-    to smartphones. It could also be a way for readers to get passionate about this topic and an inspiration for them to make their own emulators 
-    (or even better, their own consoles!).
+    This paper is not and was **not intended as a guide**, I previously attached some real references.\\
+    This document is a **report** of my journey throughtout the development of the emulator, made to understand the fundamentals of what is around us, from personal computers to smartphones. It could also be a way for readers to get passionate about this topic and an inspiration for them to make their own emulators (or even better, their own consoles!).
     @newpage\
     
     @section (label=sec:general-structure) General Structure\
@@ -78,17 +76,17 @@
 
     The real hardware is driven by the clock, while my implementation will be driven by how many clock cycles an instruction took.
     This may cause some bugs and imprecisions in the emulator (and that was my main concern), but in the end it worked just fine.
+
     @newpage\
 
     @section (label=sec:memory) Memory\
-    Before looking at the main components that shape the Game Boy hardware, I would like to focus on how memory is subdivided inside the console.\\
+    Before looking at the main components that shape the Game Boy hardware, I would like to focus on how memory is subdivided inside the console. As in this memory lays everything needed by the Game Boy in order to function, from game code, to objects that will have to be rendered on screen.
 
     @subsection (label=subsec:memory-mapping) Memory Mapping\
-    The address bus had 16 bits, meaning there could be 65'536 unique addresses (64Kb). \\
+    The address bus had 16 bits, while the data bus had 8 bits, meaning there could be 65'536 unique addresses (64Kb), each one storing exactly **one byte** of information. \\
     Since the Game Boy did not have a flash memory, those 64Kb were all the console could access 
     (this includes all the different RAMs, the cartridge data, and the registers made to control various components).
-    Internally inside the Game Boy, there is some logic that specifies what component will be activated 
-    based on the requesting address, but we do not have to worry about it since we are not dealing with actual hardware this time.
+    Internally inside the Game Boy, there is some logic that specifies what component will be activated based on the requesting address, but we do not have to worry about it since we are not dealing with actual hardware this time.
     \\
     These are the regions into which the memory is split, along with a brief description of their use.
     Notice that some areas are marked as "Prohibited", though Nintendo has not provided an explanation for this.
@@ -123,60 +121,63 @@
 
     Most of these regions will be discussed later, based on the components that use them.
 
+    @newpage\
+
     @subsection (label=subsec:choices) Choices for This Project\
 
     For simplicity, I decided not to break down all these areas into different regions of memory
     in the emulator, but I opted for an easier solution, which is to create an array of 65'536 bytes,
-    since the data bus was 8 bits-long, so every address will have exactly one byte of data.
+    so that every index in this array will have exactly one byte of data stored.
     \\
-    There is a trade-off in choosing this approach tough.
-    On one hand, it makes things simpler to manage, we can have all the memory in one place and it really helps when debugging,
-    but on the other hand, it is not entirely correct.
+    There is a trade-off in choosing this approach though.
+    \\
+    On one hand, it makes things simpler to manage, we can have all the memory in one place and it really helps when debugging, but on the other hand, it is not entirely correct.
     Each region of memory has different restrictions, cartridge memory should be read-only, 
-    some areas might not be fully readable and writable sometimes (we will see an example when implementing the PPU).
+    some areas might **not be** **fully readable and writable** sometimes (we will see an example when implementing the PPU).
     \\
     By choosing this option, we are making all the memory readable and writable for everyone, 
-    so tecnically, the game could edit its own code (and this actually happened when I was emulating Tetris!).
+    so tecnically, the game **could edit** its own code (and this actually happened when I was emulating Tetris!).
 
     @subsection (label=subsec:memory-implementation) Implementation\
 
     @code (language=C++, label=lst:memory) ./code/memory.code\
 
     This is the entire memory structure.
-    Every component we create will have access to this structure in order to read from and write to memory 
-    using the two operator[] functions. I have also added a **dump** function that writes 
+    \\
+    Every component we create will have access to this structure in order to read from and write to memory using the two **operator[]** functions. I have also added a **dump** function that writes 
     all the bytes to a binary file at the moment the function is called, for easier debugging.
     The **init** function just initializes the array by setting all values to 0.
-    This is **not** actually done in a real Game Boy, as the memory tipically contains random values when powered on.
+    This is **not** actually done in a real Game Boy, as the memory tipically contains **random values** when powered on.
     However, I decided to initialize it with all zeros to make debugging easier by allowing me to see if any memory has changed.
+    Most games even reset most of the memory as well, as a part of the initialization process.
 
     @newpage\
 
     @section (label=sec:cpu) CPU\
-    The first component we likely want to implement is the Central Processing Unit (CPU).
+    The first component we likely want to implement is the **Central Processing Unit** (CPU).
     This component is the most important in our circuit, and is the one that coordinates the other components, executes the program we give to it etc.
-    Thus, the first thing I had to implement were all the instructions that the processor could run.
+    In order for the programmer to tell the processor what to do, the CPU has a range of valid instructions to choose from.
+    Thus, the first thing I had to implement were all the instructions that the processor could execute.
     
     @subsection (label=subsec:architecture-considerations) Architecture and Considerations\
 
     The Game Boy CPU is a custom-made by Sharp Corporation (which had a close relationship with Nintendo at that time),
     it is often referred to as **DMG-CPU** or **Sharp SM83** and runs at around 4.19 MHz.
-    When making the processor a lot of inspiration was taken from the Zilog 80 and the Intel 8080.
-    Personally, I recently had the possibility to work with a real Z80, and over the past few months, 
-    I have gained hands-on experience with its architecture.
+    \\
+    When designing the processor a lot of inspiration was taken from the Zilog 80 and the Intel 8080.
+    Personally, I recently had the possibility to work with a real Z80, and over the past few months, I have gained hands-on experience with its architecture.
     Specifically, when studying the Zilog, I noticed some differences and similarities with the Game Boy processor.
     \\
     For example, the Nintendo processor lacks the IX and IY registers, which in the Zilog were used to set a base address that could be offset with the 
     $LD (IX + d), r$ and $LD (IY + d), r$ to save instruction bytes.
     Instead, the DMG-CPU introduced a brand new load instruction, LDH (load from high memory), 
-    which always offsets from address **FF00**, 
-    pointing to **High-RAM** and the **I/O registers**.
+    which always offsets from address **FF00**, as it points to **High-RAM** and the **I/O registers**.
     \\
-    Custom-making their own CPU was the perfect choice for Nintendo, as it allowed them to implement changes like these to better suit their needs, save instruction bytes, and increase performace.
+    Custom-making their own CPU was the perfect choice for Nintendo, as it allowed them to implement changes like these to better suit their needs, save instruction bytes, and increase performance.
     \\
     CPUs are the main core of every computer and what they do most of the time is execute instructions defined in some memory.
     In the next section, we will give a brief summary of the different types of instructions.
-    But what is most important for now is to understand that the majority of these operate on internal registers and external memory.
+    But what is most important for now is to understand that the majority of these operate on **internal registers** and **external memory**.
 
     @latex {
         \begin{table}[H]
@@ -216,17 +217,15 @@
     }
 
     Registers are the fastest memory to access because it is already inside the processor.
-    However their size is very limited, so we cannot have everything in them.
+    However their size is very limited, so we cannot have everything stored in them.
     That is why the CPU has a set of instructions for loading data to and from larger memory.
 
     @subsection (label=subsec:op-tables) The Op-Tables\
-    We can arrange all the instructions in tables, called opcode-tables, 
-    based on their identifier byte.
+    We can arrange all the instructions in tables, called **opcode-tables**, based on their identifier byte.
     \\
-    The Game Boy has 2 op-tables which are shown in Figure @ref fig:opcode-tables\. 
+    The Game Boy has **2 op-tables** which are shown in Figure @ref fig:opcode-tables\. 
     Instructions with similar behaviors have been marked with the same color.
-    Since a single byte (one op-table) was insufficient to cover all instructions,
-    an additional table was made, which however uses 2-byte instructions, with the first one always being *0xCB* in hexadecimal (acting as a prefix), covering all bit operations.
+    Since a single byte (one op-table) was insufficient to cover all instructions, an additional table was made, which uses 2-byte instructions, with the first one always being *0xCB* in hexadecimal (acting as a prefix), covering all bit operations.
     \\
     By briefly examining the different instructions, you can see that most of them perform the following operations:
     @list {
@@ -1346,6 +1345,19 @@
         @caption The Final Gameplay\
         @label fig:tetris-gameplay-final\
     }
+
+    @section (label=sec:possible-improvements) What's Next: Features Left Out and Future Enhancements\
+
+    Although we have finally reached the main goal of this project, there remain many interesting features that could be implemented to enhance personalization and improve the overall game experience.
+    \\
+    On one hand, this project does **not fully** emulate all aspects of the original Game Boy. For instance, the **Window layer rendering** was not implemented, as it was unnecessary for running Tetris, which does not utilize that feature. Similarly, audio support was left out, meaning we cannot yet hear the iconic Tetris soundtrack.
+    \\
+    On the other hand, there is room to go **beyond** emulation and enhance the experience in creative and modern ways.
+    Some features I would like to explore in the future include the ability to define custom palettes to bring color to tiles. Another exciting idea would be designing my own custom **boot ROM**, Nintendo DS style, where users could choose to launch games or perform other actions.
+    \\
+    Moreover, modern systems allow us to go beyond the limitations of the original hardware—for example, by preserving save data such as high scores across sessions. With a simple file system integration, players could keep a persistent record of their achievements, something that was not possible in the base Tetris experience on the Game Boy.
+    \\
+    That said, it is important to acknowledge that incorporating such custom features moves the emulator away from faithfully replicating the original hardware. For purists seeking to re-live the authentic Game Boy experience, these enhancements might feel out of place. Therefore, a balanced approach--perhaps allowing users to toggle between authentic and enhanced modes--could offer the best of both worlds: preserving the historical fidelity while also exploring the creative potential of modern hardware.
 
     @newpage\
 
