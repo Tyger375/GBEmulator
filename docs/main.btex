@@ -352,11 +352,37 @@
     \\
     I decided to download the binary file and start disassemblying by myself and studying from scratch.
     \\
-    (DISASSEMBLY)
+    @figure (H) {
+        @graphic (scale=.75, center) ./images/disassembly/disassembly-0.png\
+        @label fig:rom-disassembly:0\
+    }
+
+    @figure (H) {
+        @graphic (scale=.75, center) ./images/disassembly/disassembly-1.png\
+        @label fig:rom-disassembly:1\
+    }
+
+    @figure (H) {
+        @graphic (scale=.75, center) ./images/disassembly/disassembly-2.png\
+        @label fig:rom-disassembly:2\
+    }
+
+    @figure (H) {
+        @graphic (scale=.75, center) ./images/disassembly/disassembly-3.png\
+        @label fig:rom-disassembly:3\
+    }
+
+    @figure (H) {
+        @graphic (scale=.75, center) ./images/disassembly/disassembly-4.png\
+        @caption Boot ROM Disassembly\
+        @label fig:rom-disassembly:4\
+    }
+
+    @newpage\
 
     @subsection (label=subsec:boot-analysis) Boot Code Analysis\
 
-    For anyone interested, I attached a digitalized version of my disassembly that I first studied on paper.
+    For anyone interested, I attached above a digitalized version of my disassembly that I first studied on paper.
     \\
     Anyways, here is what the code does:
     @list {
