@@ -53,7 +53,7 @@
     There are many better-developed Game Boy emulators online, and making one that could compete with the other popular ones was nowhere near my goals.
     \\
     In addition, I could not achieve the level of knowledge I wanted to reach if I just looked at other people's codes, I wanted to **fully** understand the subject.
-    Obviously though I have to start somewhere, I do not have the skills to reverse-engineer a real Game Boy (although it would be an extremely interesting challenge),
+    Obviously though I had to start somewhere, I do not have the skills to reverse-engineer a real Game Boy (although it would be an extremely interesting challenge),
     for this reason I will only consult theory guides made by many passionate developers and hackers that already did the work of studying the Game Boy from scratch for us.
     For a better understanding, I used **two** sources for this project, in order to have a dual perspective on the study.\\
     For anyone who would like to dig into this challenge too, the guides are @href https://gbdev.io/ GBDev\$$fs$$ and @href https://hacktix.github.io/GBEDG/ GBEDG\.
@@ -74,7 +74,7 @@
 
     @code (language=C++, label=lst:clocking) ./code/clocking.code\ 
 
-    The real hardware is driven by the clock, while my implementation will be driven by how many clock cycles an instruction took.
+    The real hardware is driven by the clock, while my implementation will be driven by how many **clock cycles** an instruction took.
     This may cause some bugs and imprecisions in the emulator (and that was my main concern), but in the end it worked just fine.
 
     @newpage\
@@ -315,7 +315,7 @@
         }
     }
 
-    Instructions also can take different amount of clock cycles to execute.
+    Instructions also can take **different amount** of clock cycles to execute.
 
     @newpage\
 
@@ -350,7 +350,7 @@
     This code is exactly **256 bytes** and is stored in the first 256 addresses 
     (from 0000-00FF in hexadecimal).
     \\
-    I decided to download the binary file and start disassemblying by myself and studying from scratch.
+    I decided to download the binary file and start disassemblying and studying by myself from scratch, instead of downloading from the Internet a pre-disassembled version.
     \\
     @figure (H) {
         @graphic (scale=.75, center) ./images/disassembly/disassembly-0.png\
@@ -418,7 +418,7 @@
 
     I checked whether the registers that were supposed to be modified had the correct values to verify if my CPU implementation was accurate--and it was!
     \\
-    The only issue now is that execution stops between addresses **0x64** and **0x68**. Looking at my disassembly, I noticed that the code was looping until register **FF44** reached **0x90**. However, after examining the rest of the code, I saw that this register was never modified, meaning it must be  a read-only register managed by another component.
+    The only issue now is that execution would stop between addresses **0x64** and **0x68**. Looking at my disassembly, I noticed that the code was looping until register **FF44** reached **0x90**. However, after examining the rest of the code, I saw that this register was never modified, meaning it must be a **read-only register** managed by another component.
     This component is the PPU (Pixel Processing Unit) which handles rendering on the display. Since the PPU is rather complex and long to implement, I decided to break it down into sections and follow the order in which I implemented it.
     \\
     Before working on the PPU, though, I first implemented two simpler components.
